@@ -1,0 +1,5 @@
+# Netlify deploy config — static build, no server.
+# Netlify auto-installs Bun when bun.lock is present.
+[build]
+  command = "bun run build"
+  publish = "dist"

@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+/* Dark mode driven by a `.dark` class on <html> (toggle in the UI) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+/* Brand accent tokens reused across charts + UI */
+:root {
+  --accent: #ea580c;
+  --accent2: #ea580c;
+  --good: #ea580c;
+  --avg: #64748b;
+}
+.dark {
+  --accent: #fb923c;
+  --accent2: #fb923c;
+  --good: #fb923c;
+  --avg: #94a3b8;
+}
+
+html { scroll-behavior: smooth; }

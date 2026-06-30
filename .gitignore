@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.DS_Store
+
+# Private hotel data — never commit. Real CSV/XLSX exports stay local only.
+data/
+*.csv
+*.xlsx
+# Legacy single-file prototype has real data embedded — keep local only
+legacy/

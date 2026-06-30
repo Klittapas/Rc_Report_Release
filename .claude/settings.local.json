@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(xargs kill -9)",
+      "Bash(cp \"/Users/killttapaspongprae/Downloads/Aster_Hotel_Reviews_TH.xlsx\" data/)",
+      "Bash(bunx tsc *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)"
+    ]
+  }
+}

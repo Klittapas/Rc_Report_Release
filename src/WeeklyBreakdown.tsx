@@ -1,0 +1,150 @@
+import { useMemo, useState } from "react";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend,
+} from "chart.js";
+import type { Plugin } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
+import type { Dataset } from "./aggregate.ts";
+import { fmt, fmtK, PROMO_COLORS } from "./format.ts";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
+const H = 0, S = 1, P = 2, D = 4, ROOMS = 5, REV = 6;
+const TOP_N = 4; // stacked segments per week (keep it readable)
+// stack bottom -> top: navy, dark red, red-orange, coral (rank 1..4)
+const REDS = ["#1e3050", "#b1333f", "#d6473c", "#ea5c43"];
+
+// calendar week of month: 1-7=Wk1, 8-14=Wk2, 15-21=Wk3, 22-end=Wk4
+const weekOf = (iso: string) => Math.min(Math.floor((parseInt(iso.slice(8, 10), 10) - 1) / 7) + 1, 4);
+
+export function WeeklyBreakdown({
+  dataset,
+  segments,
+  startIdx,
+  endIdx,
+  dark,
+}: {
+  dataset: Dataset;
+  segments: Set<string>;
+  startIdx: number;
+  endIdx: number;
+  dark: boolean;
+}) {
+  const [metric, setMetric] = useState<"revenue" | "rooms">("revenue");
+  const [hotel, setHotel] = useState<string>("All hotels");
+  const colIdx = metric === "revenue" ? REV : ROOMS;
+  const hotelIdx = dataset.hotels.indexOf(hotel); // -1 when "All hotels"
+
+  const { weeks, series } = useMemo(() => {
+    const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
+    const byWeek = new Map<number, Map<number, number>>();
+    const planTotal = new Map<number, number>();
+    for (const r of dataset.rows) {
+      if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
+      if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      const wk = weekOf(dataset.dates[r[D]]);
+      let m = byWeek.get(wk);
+      if (!m) { m = new Map(); byWeek.set(wk, m); }
+      m.set(r[P], (m.get(r[P]) || 0) + r[colIdx]);
+      planTotal.set(r[P], (planTotal.get(r[P]) || 0) + r[colIdx]);
+    }
+    const weekKeys = [...byWeek.keys()].sort((a, b) => a - b);
+    const topPlans = [...planTotal.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_N).map((e) => e[0]);
+    return {
+      weeks: weekKeys.map((w) => `Week ${w}`),
+      series: topPlans.map((pi) => ({
+        plan: dataset.plans[pi],
+        color: PROMO_COLORS[dataset.plans[pi]] || "#94a3b8",
+        data: weekKeys.map((wk) => byWeek.get(wk)!.get(pi) || 0),
+      })),
+    };
+  }, [dataset, segments, startIdx, endIdx, colIdx, hotelIdx]);
+
+  const tick = dark ? "#94a3b8" : "#64748b";
+  const label = dark ? "#e2e8f0" : "#334155";
+  const grid = dark ? "rgba(148,163,184,0.15)" : "rgba(100,116,139,0.15)";
+  const fmtVal = (v: number) => (metric === "revenue" ? fmtK(v) : v.toLocaleString());
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
+          Weekly Breakdown — top promos by week
+        </h4>
+        <div className="flex items-center gap-2">
+          <select
+            value={hotel}
+            onChange={(e) => setHotel(e.target.value)}
+            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          >
+            <option>All hotels</option>
+            {dataset.hotels.map((h) => <option key={h} value={h}>{h}</option>)}
+          </select>
+          <div className="flex gap-1">
+            {(["revenue", "rooms"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMetric(m)}
+                className={
+                  "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition " +
+                  (metric === m
+                    ? "bg-orange-600 text-white dark:bg-orange-500"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
+                }
+              >
+                {m === "rooms" ? "Rooms" : "Revenue"}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <p className="mb-3 text-[11px] text-slate-400">
+        Top {TOP_N} promos · stacked per week · Wk1 = day 1-7, Wk2 = 8-14, Wk3 = 15-21, Wk4 = 22-end
+      </p>
+      <div className="relative h-[340px]">
+        <Bar
+          plugins={[ChartDataLabels as Plugin<"bar">]}
+          data={{
+            labels: weeks,
+            datasets: series.map((s, i) => {
+              const R = 35, last = series.length - 1; // half of maxBarThickness = full capsule ends
+              const radius = series.length === 1
+                ? R
+                : i === 0 ? { bottomLeft: R, bottomRight: R, topLeft: 0, topRight: 0 }
+                  : i === last ? { topLeft: R, topRight: R, bottomLeft: 0, bottomRight: 0 }
+                    : 0;
+              return {
+                label: s.plan,
+                data: s.data,
+                backgroundColor: REDS[i] ?? REDS[REDS.length - 1],
+                borderRadius: radius,
+                borderSkipped: false,
+                maxBarThickness: 70,
+                stack: "w",
+              };
+            }),
+          }}
+          options={{
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: "top", align: "start", labels: { color: label, usePointStyle: true, boxWidth: 8, font: { size: 11.5, weight: 600 }, padding: 14 } },
+              tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${metric === "revenue" ? fmt(Number(c.raw)) : Number(c.raw).toLocaleString()}` } },
+              datalabels: {
+                anchor: "center",
+                align: "center",
+                color: "#fff",
+                font: { size: 9.5, weight: 700 },
+                formatter: (v: number) => (v > 0 ? fmtVal(v) : ""),
+              },
+            },
+            scales: {
+              x: { stacked: true, ticks: { color: label, font: { weight: 600 } }, grid: { display: false } },
+              y: { stacked: true, beginAtZero: true, ticks: { color: tick, callback: (v) => fmtVal(Number(v)) }, grid: { color: grid } },
+            },
+          }}
+        />
+      </div>
+    </div>
+  );
+}
