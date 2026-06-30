@@ -25,7 +25,7 @@ export function Controls({
   setEndIdx: (i: number) => void;
   theme: Theme;
   toggleTheme: () => void;
-  onUpload: (file: File) => void;
+  onUpload: (files: FileList | File[]) => void;
   uploadMsg: string;
 }) {
   return (
@@ -77,11 +77,11 @@ export function Controls({
           <input
             type="file"
             accept=".csv,text/csv"
+            multiple
             className="hidden"
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) onUpload(f);
-              e.target.value = ""; // allow re-uploading the same file
+              if (e.target.files?.length) onUpload(e.target.files);
+              e.target.value = ""; // allow re-uploading the same file(s)
             }}
           />
         </label>

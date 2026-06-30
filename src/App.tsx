@@ -30,20 +30,24 @@ export function App() {
     [dataset, activeSegments, startIdx, endIdx],
   );
 
-  const handleUpload = async (file: File) => {
-    setUploadMsg("Normalizing…");
+  const handleUpload = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (!list.length) return;
+    const n = list.length;
+    setUploadMsg(n > 1 ? `Normalizing ${n} files…` : "Normalizing…");
     try {
-      const text = await file.text();
-      const { dataset: ds, rowsRead, rowsKept } = normalizeCsv(text);
+      const texts = await Promise.all(list.map((f) => f.text()));
+      const { dataset: ds, rowsRead, rowsKept } = normalizeCsv(texts);
       if (!ds.rows.length) throw new Error("No usable rows found.");
-      // reset filters to fit the new data
+      // reset filters to fit the merged data
       setDataset(ds);
-      setSource(`uploaded · ${file.name}`);
+      setSource(n > 1 ? `uploaded · ${n} files merged` : `uploaded · ${list[0].name}`);
       setActiveSegments(new Set(ds.segments.includes("OTA") ? ["OTA"] : [ds.segments[0]]));
       setStartIdx(0);
       setEndIdx(ds.dates.length - 1);
       setSelected(0);
-      setUploadMsg(`✓ ${file.name} — ${rowsKept.toLocaleString()} normalized rows from ${rowsRead.toLocaleString()} read · ${ds.dates.length} days`);
+      const label = n > 1 ? `${n} files` : list[0].name;
+      setUploadMsg(`✓ ${label} — ${rowsKept.toLocaleString()} rows from ${rowsRead.toLocaleString()} read · ${ds.dates.length} days`);
     } catch (e) {
       setUploadMsg(`✕ ${(e as Error).message}`);
     }
@@ -82,14 +86,15 @@ export function App() {
             <input
               type="file"
               accept=".csv,text/csv"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleUpload(f);
+                if (e.target.files?.length) handleUpload(e.target.files);
                 e.target.value = "";
               }}
             />
           </label>
+          <p className="mt-3 text-[11px] text-slate-400">Select multiple months at once to merge them.</p>
           {uploadMsg && (
             <div className="mt-4 text-[12px] font-medium text-slate-500 dark:text-slate-400">{uploadMsg}</div>
           )}
