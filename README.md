@@ -41,22 +41,22 @@ PORT=4000 bun run dev
 > (rooms occupied per night). A **Booking Date** report counts rooms by when they were *booked*,
 > so the "occupancy" bars can exceed 100% and daily revenue can go negative (cancellations).
 
-## Deploy (Netlify or Vercel — keeps the repo private)
+## Deploy (GitHub Pages)
 
-The repo stays **private** (its git history contains earlier real data); only the built site is
-public, and the build ships **no data**. Both platforms deploy a private repo on their free tier.
+This repo's history is clean (no real data was ever committed), so it is safe to make **public**
+and use free GitHub Pages. `.github/workflows/deploy.yml` builds with Bun and publishes `./dist`.
 
-**Netlify** — New site → import the repo. Settings come from `netlify.toml`
-(`bun run build` → publish `dist`). Done.
+One-time setup:
 
-**Vercel** — Import the repo. Settings come from `vercel.json`
-(build `bun run build`, output `dist`). Framework preset = *Other*.
+1. Repo → **Settings → General** → make the repo **Public**.
+2. Repo → **Settings → Pages** → **Build and deployment → Source = GitHub Actions**.
+3. Push to `main` (or re-run the workflow) → site goes live at
+   `https://<user>.github.io/<repo>/`.
 
-Either way: push to `main` → auto build & deploy. Asset paths are relative, so it also works
-under a sub-path.
+Asset paths are relative, so it works under that sub-path with no extra config.
 
-> Not using GitHub Pages: free Pages requires a **public** repo, which would expose the real
-> data still in git history. Netlify/Vercel deploy straight from the private repo instead.
+> Alternative — **Netlify / Vercel**: import the repo; settings come from `netlify.toml` /
+> `vercel.json` (`bun run build` → `dist`). These also deploy a *private* repo on the free tier.
 
 ## Features
 
