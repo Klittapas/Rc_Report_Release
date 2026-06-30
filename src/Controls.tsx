@@ -4,6 +4,7 @@ export function Controls({
   segments,
   activeSegments,
   toggleSegment,
+  toggleAllSegments,
   hotels,
   selectedHotel,
   setSelectedHotel,
@@ -16,6 +17,7 @@ export function Controls({
   segments: string[];
   activeSegments: Set<string>;
   toggleSegment: (s: string) => void;
+  toggleAllSegments: () => void;
   hotels: string[];
   selectedHotel: string;
   setSelectedHotel: (name: string) => void;
@@ -33,6 +35,22 @@ export function Controls({
           Segment
         </div>
         <div className="flex flex-wrap gap-1.5">
+          {(() => {
+            const allOn = activeSegments.size === segments.length && segments.length > 0;
+            return (
+              <button
+                onClick={toggleAllSegments}
+                className={
+                  "rounded-full px-3 py-1 text-xs font-bold transition " +
+                  (allOn
+                    ? "bg-orange-600 text-white shadow-sm dark:bg-orange-500"
+                    : "border border-orange-400 text-orange-600 hover:bg-orange-50 dark:border-orange-500 dark:text-orange-300 dark:hover:bg-orange-500/10")
+                }
+              >
+                All
+              </button>
+            );
+          })()}
           {segments.map((s) => {
             const on = activeSegments.has(s);
             return (

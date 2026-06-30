@@ -62,6 +62,15 @@ export function App() {
     });
   };
 
+  // "All" chip: select every segment, or fall back to OTA/first when all are already on
+  const toggleAllSegments = () => {
+    setActiveSegments((prev) =>
+      prev.size === dataset.segments.length
+        ? new Set([dataset.segments.includes("OTA") ? "OTA" : dataset.segments[0]])
+        : new Set(dataset.segments),
+    );
+  };
+
   const grandRev = hotels.reduce((a, h) => a + h.total_revenue, 0);
   const segLabel = activeSegments.size === dataset.segments.length
     ? "All segments" : [...activeSegments].join(" + ");
@@ -151,6 +160,7 @@ export function App() {
           segments={dataset.segments}
           activeSegments={activeSegments}
           toggleSegment={toggleSegment}
+          toggleAllSegments={toggleAllSegments}
           hotels={hotels.map((h) => h.name)}
           selectedHotel={hotels[selected]?.name ?? ""}
           setSelectedHotel={(name) => setSelected(Math.max(0, hotels.findIndex((h) => h.name === name)))}
