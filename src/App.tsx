@@ -106,8 +106,8 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-5 py-7">
-        <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
+        <header className="mb-5 flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
                OTA Promotion Performance Dashboard
             </h1>
@@ -118,7 +118,7 @@ export function App() {
               Click a point to see <b className="text-orange-600 dark:text-orange-400">which promotion earns the most</b>.
             </p>
           </div>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex shrink-0 flex-col items-end gap-1">
             <div className="flex items-center gap-2">
               <label className="cursor-pointer rounded-lg border border-orange-500 bg-orange-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
                 ⬆ Upload CSV
