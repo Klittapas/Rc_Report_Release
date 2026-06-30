@@ -26,11 +26,13 @@ export function HotelComparison({
   hotels,
   nights,
   dark,
+  selectedName,
   onSelect,
 }: {
   hotels: HotelAgg[];
   nights: number; // number of days in the selected date range (available room-nights = inventory × nights)
   dark: boolean;
+  selectedName?: string;
   onSelect: (name: string) => void;
 }) {
   const [metric, setMetric] = useState<Metric>("revpar");
@@ -100,7 +102,8 @@ export function HotelComparison({
             labels: ranked.map((h) => shortName(h.name)),
             datasets: [{
               data: values,
-              backgroundColor: values.map((v) => (v === max ? accent : muted)),
+              backgroundColor: ranked.map((h, i) =>
+                selectedName ? (h.name === selectedName ? accent : muted) : (values[i] === max ? accent : muted)),
               borderRadius: 7,
               maxBarThickness: 40,
             }],

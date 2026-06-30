@@ -5,6 +5,9 @@ export function Controls({
   segments,
   activeSegments,
   toggleSegment,
+  hotels,
+  selectedHotel,
+  setSelectedHotel,
   dates,
   startIdx,
   endIdx,
@@ -18,6 +21,9 @@ export function Controls({
   segments: string[];
   activeSegments: Set<string>;
   toggleSegment: (s: string) => void;
+  hotels: string[];
+  selectedHotel: string;
+  setSelectedHotel: (name: string) => void;
   dates: string[];
   startIdx: number;
   endIdx: number;
@@ -54,6 +60,20 @@ export function Controls({
             );
           })}
         </div>
+      </div>
+
+      {/* Hotel focus */}
+      <div className="min-w-0">
+        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Hotel
+        </div>
+        <select
+          value={selectedHotel}
+          onChange={(e) => setSelectedHotel(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+        >
+          {hotels.map((h) => <option key={h} value={h}>{h}</option>)}
+        </select>
       </div>
 
       {/* Date range */}

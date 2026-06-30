@@ -6,11 +6,11 @@ import {
 import type { Plugin } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { Dataset } from "./aggregate.ts";
-import { fmt, fmtK, PROMO_COLORS } from "./format.ts";
+import { fmt, fmtK } from "./format.ts";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-const H = 0, S = 1, P = 2, D = 4, ROOMS = 5, REV = 6;
+const H = 0, S = 1, P = 2, C = 3, D = 4, ROOMS = 5, REV = 6;
 const TOP_N = 4; // stacked segments per week (keep it readable)
 // stack bottom -> top: navy, dark red, red-orange, coral (rank 1..4)
 const REDS = ["#1e3050", "#b1333f", "#d6473c", "#ea5c43"];
@@ -32,34 +32,36 @@ export function WeeklyBreakdown({
   dark: boolean;
 }) {
   const [metric, setMetric] = useState<"revenue" | "rooms">("revenue");
+  const [dim, setDim] = useState<"promo" | "channel">("promo");
   const [hotel, setHotel] = useState<string>("All hotels");
   const colIdx = metric === "revenue" ? REV : ROOMS;
+  const dimIdx = dim === "promo" ? P : C;
+  const names = dim === "promo" ? dataset.plans : dataset.channels;
   const hotelIdx = dataset.hotels.indexOf(hotel); // -1 when "All hotels"
 
   const { weeks, series } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
     const byWeek = new Map<number, Map<number, number>>();
-    const planTotal = new Map<number, number>();
+    const itemTotal = new Map<number, number>();
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
       const wk = weekOf(dataset.dates[r[D]]);
       let m = byWeek.get(wk);
       if (!m) { m = new Map(); byWeek.set(wk, m); }
-      m.set(r[P], (m.get(r[P]) || 0) + r[colIdx]);
-      planTotal.set(r[P], (planTotal.get(r[P]) || 0) + r[colIdx]);
+      m.set(r[dimIdx], (m.get(r[dimIdx]) || 0) + r[colIdx]);
+      itemTotal.set(r[dimIdx], (itemTotal.get(r[dimIdx]) || 0) + r[colIdx]);
     }
     const weekKeys = [...byWeek.keys()].sort((a, b) => a - b);
-    const topPlans = [...planTotal.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_N).map((e) => e[0]);
+    const topItems = [...itemTotal.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_N).map((e) => e[0]);
     return {
       weeks: weekKeys.map((w) => `Week ${w}`),
-      series: topPlans.map((pi) => ({
-        plan: dataset.plans[pi],
-        color: PROMO_COLORS[dataset.plans[pi]] || "#94a3b8",
-        data: weekKeys.map((wk) => byWeek.get(wk)!.get(pi) || 0),
+      series: topItems.map((ii) => ({
+        plan: names[ii],
+        data: weekKeys.map((wk) => byWeek.get(wk)!.get(ii) || 0),
       })),
     };
-  }, [dataset, segments, startIdx, endIdx, colIdx, hotelIdx]);
+  }, [dataset, segments, startIdx, endIdx, colIdx, dimIdx, hotelIdx]);
 
   const tick = dark ? "#94a3b8" : "#64748b";
   const label = dark ? "#e2e8f0" : "#334155";
@@ -70,7 +72,7 @@ export function WeeklyBreakdown({
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
-          Weekly Breakdown — top promos by week
+          Weekly Breakdown — top {dim === "promo" ? "promos" : "channels"} by week
         </h4>
         <div className="flex items-center gap-2">
           <select
@@ -81,6 +83,22 @@ export function WeeklyBreakdown({
             <option>All hotels</option>
             {dataset.hotels.map((h) => <option key={h} value={h}>{h}</option>)}
           </select>
+          <div className="flex gap-1">
+            {(["promo", "channel"] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => setDim(d)}
+                className={
+                  "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition " +
+                  (dim === d
+                    ? "bg-orange-600 text-white dark:bg-orange-500"
+                    : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
+                }
+              >
+                {d === "promo" ? "Promo" : "Channel"}
+              </button>
+            ))}
+          </div>
           <div className="flex gap-1">
             {(["revenue", "rooms"] as const).map((m) => (
               <button
@@ -100,7 +118,7 @@ export function WeeklyBreakdown({
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
-        Top {TOP_N} promos · stacked per week · Wk1 = day 1-7, Wk2 = 8-14, Wk3 = 15-21, Wk4 = 22-end
+        Top {TOP_N} {dim === "promo" ? "promos" : "channels"} · stacked per week · Wk1 = day 1-7, Wk2 = 8-14, Wk3 = 15-21, Wk4 = 22-end
       </p>
       <div className="relative h-[340px]">
         <Bar

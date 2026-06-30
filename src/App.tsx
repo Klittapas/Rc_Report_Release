@@ -122,6 +122,9 @@ export function App() {
           segments={dataset.segments}
           activeSegments={activeSegments}
           toggleSegment={toggleSegment}
+          hotels={hotels.map((h) => h.name)}
+          selectedHotel={hotels[selected]?.name ?? ""}
+          setSelectedHotel={(name) => setSelected(Math.max(0, hotels.findIndex((h) => h.name === name)))}
           dates={dataset.dates}
           startIdx={startIdx}
           endIdx={endIdx}
@@ -156,6 +159,7 @@ export function App() {
           hotels={hotels}
           nights={endIdx - startIdx + 1}
           dark={dark}
+          selectedName={hotels[selected]?.name ?? ""}
           onSelect={(name) => setSelected(hotels.findIndex((h) => h.name === name))}
         />
 

@@ -8,3 +8,6 @@ data/
 *.xlsx
 # Legacy single-file prototype has real data embedded — keep local only
 legacy/
+
+# Editor
+.vscode/

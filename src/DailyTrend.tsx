@@ -4,7 +4,6 @@ import {
   LineElement, Tooltip, Legend, Filler, LineController, BarController,
 } from "chart.js";
 import type { HotelAgg } from "./aggregate.ts";
-import { HOTEL_INVENTORY } from "./aggregate.ts";
 import { fmt, fmtK } from "./format.ts";
 
 ChartJS.register(
@@ -17,7 +16,6 @@ export function DailyTrend({ hotel, dark }: { hotel: HotelAgg; dark: boolean }) 
   const tick = dark ? "#94a3b8" : "#64748b";
   const label = dark ? "#e2e8f0" : "#334155";
   const accent2 = dark ? "#fb923c" : "#ea580c";
-  const inv = HOTEL_INVENTORY[hotel.name] || 0; // rooms inventory for occupancy %
 
   const box = "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900";
 
@@ -32,14 +30,14 @@ export function DailyTrend({ hotel, dark }: { hotel: HotelAgg; dark: boolean }) 
   return (
     <div className={box}>
       <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Daily Trend — {hotel.name}</h4>
-      <p className="mb-2.5 text-[11px] text-slate-400">Daily revenue (line) and occupancy % (bars)</p>
+      <p className="mb-2.5 text-[11px] text-slate-400">Daily revenue (line) and rooms sold (bars)</p>
       <div className="relative h-75">
         <Chart
           type="bar"
           data={{
             labels: hotel.trend.map((x) => x.date.slice(5)),
             datasets: [
-              { type: "bar" as const, label: "Occupancy", data: hotel.trend.map((x) => inv ? Math.round((x.rooms / inv) * 1000) / 10 : 0),
+              { type: "bar" as const, label: "Rooms", data: hotel.trend.map((x) => x.rooms),
                 backgroundColor: dark ? "rgba(148,163,184,0.30)" : "rgba(148,163,184,0.35)", yAxisID: "y1", borderRadius: 4 },
               { type: "line" as const, label: "Revenue", data: hotel.trend.map((x) => x.revenue),
                 borderColor: accent2, backgroundColor: dark ? "rgba(251,146,60,0.15)" : "rgba(234,88,12,0.10)",
@@ -54,14 +52,14 @@ export function DailyTrend({ hotel, dark }: { hotel: HotelAgg; dark: boolean }) 
               tooltip: {
                 callbacks: {
                   label: (c) => c.dataset.label === "Revenue"
-                    ? ` Revenue: ${fmt(Number(c.raw))}` : ` Occupancy: ${c.raw}%`,
+                    ? ` Revenue: ${fmt(Number(c.raw))}` : ` Rooms: ${Number(c.raw).toLocaleString()}`,
                 },
               },
             },
             scales: {
               x: { ticks: { color: tick, maxRotation: 0, font: { size: 10 } }, grid: { display: false } },
               y: { position: "left", ticks: { color: accent2, callback: (v) => fmtK(Number(v)) }, grid: { color: grid } },
-              y1: { position: "right", suggestedMax: 100, ticks: { color: tick, callback: (v) => v + "%" }, grid: { display: false } },
+              y1: { position: "right", beginAtZero: true, ticks: { color: tick, callback: (v) => Number(v).toLocaleString() }, grid: { display: false } },
             },
           }}
         />
