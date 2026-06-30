@@ -106,16 +106,45 @@ export function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto max-w-7xl px-5 py-7">
-        <header className="mb-5">
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-             OTA Promotion Performance Dashboard
-          </h1>
-          <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-            <Pill>{segLabel}</Pill>
-            <Pill>{dataset.dates[startIdx]} → {dataset.dates[endIdx]}</Pill>
-            <Pill>{fmtK(grandRev)} total</Pill>
-            Click a point to see <b className="text-orange-600 dark:text-orange-400">which promotion earns the most</b>.
-          </p>
+        <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+               OTA Promotion Performance Dashboard
+            </h1>
+            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <Pill>{segLabel}</Pill>
+              <Pill>{dataset.dates[startIdx]} → {dataset.dates[endIdx]}</Pill>
+              <Pill>{fmtK(grandRev)} total</Pill>
+              Click a point to see <b className="text-orange-600 dark:text-orange-400">which promotion earns the most</b>.
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-2">
+              <label className="cursor-pointer rounded-lg border border-orange-500 bg-orange-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-orange-600">
+                ⬆ Upload CSV
+                <input
+                  type="file"
+                  accept=".csv,text/csv"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files?.length) handleUpload(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              <button
+                onClick={toggleTheme}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                title="Toggle light / dark"
+              >
+                {theme === "dark" ? " Light" : " Dark"}
+              </button>
+            </div>
+            {uploadMsg && (
+              <div className="max-w-xs text-right text-[11px] font-medium text-slate-500 dark:text-slate-400">{uploadMsg}</div>
+            )}
+          </div>
         </header>
 
         <Controls
@@ -130,10 +159,6 @@ export function App() {
           endIdx={endIdx}
           setStartIdx={setStartIdx}
           setEndIdx={setEndIdx}
-          theme={theme}
-          toggleTheme={toggleTheme}
-          onUpload={handleUpload}
-          uploadMsg={uploadMsg}
         />
 
         <div className="mb-3.5 text-[13px] font-bold uppercase tracking-wider text-slate-400">
