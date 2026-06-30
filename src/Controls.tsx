@@ -1,4 +1,5 @@
 import { DateRangePicker } from "./DateRangePicker.tsx";
+import { Dropdown } from "./Dropdown.tsx";
 
 export function Controls({
   segments,
@@ -76,13 +77,13 @@ export function Controls({
         <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
           Hotel
         </div>
-        <select
+        <Dropdown
           value={selectedHotel}
-          onChange={(e) => setSelectedHotel(e.target.value)}
-          className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-        >
-          {hotels.map((h) => <option key={h} value={h}>{h}</option>)}
-        </select>
+          options={hotels}
+          onChange={setSelectedHotel}
+          minWidth={240}
+          ariaLabel="Select hotel"
+        />
       </div>
 
       {/* Date range */}
