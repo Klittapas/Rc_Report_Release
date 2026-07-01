@@ -73,18 +73,16 @@ export function Dropdown({
       {open && createPortal(
         <div
           ref={popRef}
-          style={{ position: "fixed", top: pos.top + 20, left: pos.left, width: Math.max(pos.width, 280) }}
-          className="z-[100] rounded-[26px] bg-gradient-to-b from-orange-500 via-orange-600 to-slate-800 p-3 shadow-2xl ring-1 ring-black/5"
+          style={{ position: "fixed", top: pos.top + 30, left: pos.left, width: Math.max(pos.width, 290) }}
+          className="relative z-[100] rounded-tl-[24px] rounded-tr-[72px] rounded-b-[30px] bg-gradient-to-br from-orange-400 via-orange-600 to-slate-800 p-3 pt-9 shadow-2xl ring-1 ring-black/5"
         >
-          {/* avatar header — initials of the current selection */}
-          <div className="relative mb-2 flex items-center gap-3 px-2 pt-1">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/25 text-sm font-bold text-white ring-2 ring-white/40">
-              {initials(value)}
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Hotel</div>
-              <div className="truncate text-sm font-bold text-white">{value}</div>
-            </div>
+          {/* avatar protrudes at the top-right, seated in the stretched curved corner */}
+          <div className="absolute -top-6 right-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-orange-300 to-orange-500 text-base font-bold text-white shadow-lg ring-4 ring-white/30">
+            {initials(value)}
+          </div>
+          <div className="mb-2.5 px-2">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Hotel</div>
+            <div className="truncate pr-16 text-sm font-bold text-white">{value}</div>
           </div>
 
           <div className="flex max-h-72 flex-col gap-1.5 overflow-auto pr-0.5">
