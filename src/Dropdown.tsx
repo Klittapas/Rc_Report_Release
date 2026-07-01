@@ -23,6 +23,7 @@ export function Dropdown({
   ariaLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [entered, setEntered] = useState(false); // drives the open transition
   const [pos, setPos] = useState({ top: 0, left: 0, width: minWidth });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
@@ -40,11 +41,14 @@ export function Dropdown({
       if (r) setPos({ top: r.bottom + 6, left: r.left, width: Math.max(r.width, minWidth) });
     };
     place();
+    const raf = requestAnimationFrame(() => setEntered(true)); // trigger enter transition
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
     window.addEventListener("scroll", place, true);
     window.addEventListener("resize", place);
     return () => {
+      cancelAnimationFrame(raf);
+      setEntered(false);
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", place, true);
@@ -74,7 +78,10 @@ export function Dropdown({
         <div
           ref={popRef}
           style={{ position: "fixed", top: pos.top + 30, left: pos.left, width: Math.max(pos.width, 290) }}
-          className="relative z-[100] rounded-tl-[24px] rounded-tr-[72px] rounded-b-[30px] bg-gradient-to-br from-orange-400 via-orange-600 to-slate-800 p-3 pt-9 shadow-2xl ring-1 ring-black/5"
+          className={
+            "relative z-[100] origin-top-right rounded-tl-[24px] rounded-tr-[72px] rounded-b-[30px] bg-gradient-to-br from-orange-400 via-orange-600 to-slate-800 p-3 pt-9 shadow-2xl ring-1 ring-black/5 transition duration-200 ease-out " +
+            (entered ? "translate-y-0 scale-100 opacity-100" : "-translate-y-1 scale-95 opacity-0")
+          }
         >
           {/* avatar protrudes at the top-right, seated in the stretched curved corner */}
           <div className="absolute -top-6 right-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-orange-300 to-orange-500 text-base font-bold text-white shadow-lg ring-4 ring-white/30">
