@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+// first letters of the first two words, e.g. "Arbour Hotel and Residence" -> "AH"
+function initials(s: string): string {
+  const words = s.trim().split(/\s+/).filter(Boolean);
+  return ((words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")).toUpperCase() || "?";
+}
+
 // Styled single-select dropdown — replaces the native <select> so we control the look.
 // Portal-rendered (fixed) to escape ancestor backdrop-blur / overflow clipping.
 export function Dropdown({
@@ -67,32 +73,44 @@ export function Dropdown({
       {open && createPortal(
         <div
           ref={popRef}
-          style={{ position: "fixed", top: pos.top, left: pos.left, width: pos.width }}
-          className="z-[100] max-h-72 overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+          style={{ position: "fixed", top: pos.top + 20, left: pos.left, width: Math.max(pos.width, 280) }}
+          className="z-[100] rounded-[26px] bg-gradient-to-b from-orange-500 via-orange-600 to-slate-800 p-3 shadow-2xl ring-1 ring-black/5"
         >
-          {options.map((opt) => {
-            const sel = opt === value;
-            return (
-              <button
-                key={opt}
-                onClick={() => { onChange(opt); setOpen(false); }}
-                className={
-                  "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition " +
-                  (sel
-                    ? "bg-orange-500 font-semibold text-white"
-                    : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800")
-                }
-              >
-                <svg
-                  className={"h-3.5 w-3.5 shrink-0 " + (sel ? "opacity-100" : "opacity-0")}
-                  viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"
+          {/* avatar header — initials of the current selection */}
+          <div className="relative mb-2 flex items-center gap-3 px-2 pt-1">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/25 text-sm font-bold text-white ring-2 ring-white/40">
+              {initials(value)}
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Hotel</div>
+              <div className="truncate text-sm font-bold text-white">{value}</div>
+            </div>
+          </div>
+
+          <div className="flex max-h-72 flex-col gap-1.5 overflow-auto pr-0.5">
+            {options.map((opt) => {
+              const sel = opt === value;
+              return (
+                <button
+                  key={opt}
+                  onClick={() => { onChange(opt); setOpen(false); }}
+                  className={
+                    "flex w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-left text-sm transition " +
+                    (sel
+                      ? "bg-white font-semibold text-orange-600 shadow-md"
+                      : "bg-white/85 text-slate-700 hover:bg-white hover:shadow-sm")
+                  }
                 >
-                  <path d="M2.5 7.5 6 11l5.5-7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span className="truncate">{opt}</span>
-              </button>
-            );
-          })}
+                  <span className={"flex h-6 w-6 shrink-0 items-center justify-center rounded-full " + (sel ? "bg-orange-100 text-orange-600" : "bg-orange-500/15 text-orange-600")}>
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
+                      <path d="M3 14V3.5A1.5 1.5 0 0 1 4.5 2h5A1.5 1.5 0 0 1 11 3.5V6h1.5A1.5 1.5 0 0 1 14 7.5V14h-3v-2.5h-2V14H3Zm2-8h1.5V4.5H5V6Zm2.75 0H9.5V4.5H7.75V6ZM5 9.25h1.5V7.75H5v1.5Zm2.75 0H9.5V7.75H7.75v1.5Z" />
+                    </svg>
+                  </span>
+                  <span className="truncate">{opt}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>,
         document.body,
       )}
