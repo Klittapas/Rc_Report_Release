@@ -77,22 +77,22 @@ export function Dropdown({
       {open && createPortal(
         <div
           ref={popRef}
-          style={{ position: "fixed", top: pos.top + 30, left: pos.left, width: Math.max(pos.width, 290) }}
+          style={{ position: "fixed", top: pos.top + 24, left: pos.left, width: Math.max(pos.width, 232) }}
           className={
-            "relative z-[100] origin-top-right rounded-tl-[24px] rounded-tr-[72px] rounded-b-[30px] bg-gradient-to-br from-orange-400 via-orange-600 to-slate-800 p-3 pt-9 shadow-2xl ring-1 ring-black/5 transition duration-200 ease-out " +
+            "relative z-[100] origin-top-right rounded-tl-[16px] rounded-tr-[46px] rounded-b-[20px] bg-gradient-to-b from-[#c2653c] via-slate-700 to-slate-800 p-2 pt-6 shadow-2xl ring-1 ring-black/5 transition duration-200 ease-out " +
             (entered ? "translate-y-0 scale-100 opacity-100" : "-translate-y-1 scale-95 opacity-0")
           }
         >
           {/* avatar protrudes at the top-right, seated in the stretched curved corner */}
-          <div className="absolute -top-6 right-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-orange-300 to-orange-500 text-base font-bold text-white shadow-lg ring-4 ring-white/30">
+          <div className="absolute -top-4 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#eaa079] to-[#d97742] text-xs font-bold text-white shadow-md ring-2 ring-white/40">
             {initials(value)}
           </div>
-          <div className="mb-2.5 px-2">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-white/70">Hotel</div>
-            <div className="truncate pr-16 text-sm font-bold text-white">{value}</div>
+          <div className="mb-1.5 px-1.5">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-white/60">Hotel</div>
+            <div className="truncate pr-12 text-[12.5px] font-bold text-white">{value}</div>
           </div>
 
-          <div className="flex max-h-72 flex-col gap-1.5 overflow-auto pr-0.5">
+          <div className="flex max-h-64 flex-col gap-1 overflow-auto pr-0.5">
             {options.map((opt) => {
               const sel = opt === value;
               return (
@@ -100,14 +100,14 @@ export function Dropdown({
                   key={opt}
                   onClick={() => { onChange(opt); setOpen(false); }}
                   className={
-                    "flex w-full items-center gap-3 rounded-full px-3.5 py-2.5 text-left text-sm transition " +
+                    "flex w-full items-center gap-2 rounded-full px-2.5 py-1.5 text-left text-[12.5px] transition " +
                     (sel
-                      ? "bg-white font-semibold text-orange-600 shadow-md"
-                      : "bg-white/85 text-slate-700 hover:bg-white hover:shadow-sm")
+                      ? "bg-white font-semibold text-[#c2571f] shadow"
+                      : "bg-white/90 text-slate-700 hover:bg-white")
                   }
                 >
-                  <span className={"flex h-6 w-6 shrink-0 items-center justify-center rounded-full " + (sel ? "bg-orange-100 text-orange-600" : "bg-orange-500/15 text-orange-600")}>
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor">
+                  <span className={"flex h-5 w-5 shrink-0 items-center justify-center rounded-full " + (sel ? "bg-[#c2571f]/12 text-[#c2571f]" : "bg-slate-400/15 text-slate-500")}>
+                    <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
                       <path d="M3 14V3.5A1.5 1.5 0 0 1 4.5 2h5A1.5 1.5 0 0 1 11 3.5V6h1.5A1.5 1.5 0 0 1 14 7.5V14h-3v-2.5h-2V14H3Zm2-8h1.5V4.5H5V6Zm2.75 0H9.5V4.5H7.75V6ZM5 9.25h1.5V7.75H5v1.5Zm2.75 0H9.5V7.75H7.75v1.5Z" />
                     </svg>
                   </span>
