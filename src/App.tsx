@@ -172,9 +172,18 @@ export function App() {
         />
 
         <div className="mb-3.5 text-[13px] font-bold uppercase tracking-wider text-slate-400">
+          Hotel detail
+        </div>
+        <div key={"detail-" + (hotels[selected]?.name ?? "")} className="drill-in">
+          <HotelDetail hotel={hotels[selected]} dark={dark} />
+        </div>
+
+        <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
           Daily trend
         </div>
-        <DailyTrend hotel={hotels[selected]} dark={dark} />
+        <div key={"trend-" + (hotels[selected]?.name ?? "")} className="drill-in">
+          <DailyTrend hotel={hotels[selected]} dark={dark} />
+        </div>
 
         <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
           Promotion source · which OTA channel drives each promo
@@ -208,11 +217,6 @@ export function App() {
           endIdx={endIdx}
           dark={dark}
         />
-
-        <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
-          Hotel detail
-        </div>
-        <HotelDetail hotel={hotels[selected]} dark={dark} />
 
         <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
           Overview · click a point to drill in
