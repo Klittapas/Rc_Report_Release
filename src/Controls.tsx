@@ -29,7 +29,7 @@ export function Controls({
   setEndIdx: (i: number) => void;
 }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end gap-x-6 gap-y-4 rounded-2xl border border-slate-200 bg-white/70 p-4 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/60">
+    <div className="sticky top-0 z-20 mb-5 flex flex-wrap items-end gap-x-6 gap-y-4 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
       {/* Segment filter */}
       <div className="min-w-0">
         <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">

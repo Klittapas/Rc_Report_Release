@@ -7,6 +7,10 @@ import type { Plugin } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { Dataset } from "./aggregate.ts";
 import { fmt, fmtK } from "./format.ts";
+import { Dropdown } from "./Dropdown.tsx";
+
+const ALL_CHAN = "All channels";
+const ALL_PROMO = "All promos";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -21,23 +25,28 @@ const weekOf = (iso: string) => Math.min(Math.floor((parseInt(iso.slice(8, 10), 
 export function WeeklyBreakdown({
   dataset,
   segments,
+  hotel,
   startIdx,
   endIdx,
   dark,
 }: {
   dataset: Dataset;
   segments: Set<string>;
+  hotel: string;
   startIdx: number;
   endIdx: number;
   dark: boolean;
 }) {
   const [metric, setMetric] = useState<"revenue" | "rooms">("revenue");
   const [dim, setDim] = useState<"promo" | "channel">("promo");
-  const [hotel, setHotel] = useState<string>("All hotels");
+  const [chanF, setChanF] = useState<string>(ALL_CHAN);
+  const [promoF, setPromoF] = useState<string>(ALL_PROMO);
   const colIdx = metric === "revenue" ? REV : ROOMS;
   const dimIdx = dim === "promo" ? P : C;
   const names = dim === "promo" ? dataset.plans : dataset.channels;
-  const hotelIdx = dataset.hotels.indexOf(hotel); // -1 when "All hotels"
+  const hotelIdx = dataset.hotels.indexOf(hotel); // follows top hotel selection
+  const chanFIdx = chanF === ALL_CHAN ? -1 : dataset.channels.indexOf(chanF);
+  const promoFIdx = promoF === ALL_PROMO ? -1 : dataset.plans.indexOf(promoF);
 
   const { weeks, series } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
@@ -46,6 +55,8 @@ export function WeeklyBreakdown({
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      if (chanFIdx >= 0 && r[C] !== chanFIdx) continue;
+      if (promoFIdx >= 0 && r[P] !== promoFIdx) continue;
       const wk = weekOf(dataset.dates[r[D]]);
       let m = byWeek.get(wk);
       if (!m) { m = new Map(); byWeek.set(wk, m); }
@@ -61,7 +72,7 @@ export function WeeklyBreakdown({
         data: weekKeys.map((wk) => byWeek.get(wk)!.get(ii) || 0),
       })),
     };
-  }, [dataset, segments, startIdx, endIdx, colIdx, dimIdx, hotelIdx]);
+  }, [dataset, segments, startIdx, endIdx, colIdx, dimIdx, hotelIdx, chanFIdx, promoFIdx]);
 
   const tick = dark ? "#94a3b8" : "#64748b";
   const label = dark ? "#e2e8f0" : "#334155";
@@ -74,15 +85,23 @@ export function WeeklyBreakdown({
         <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
           Weekly Breakdown — top {dim === "promo" ? "promos" : "channels"} by week
         </h4>
-        <div className="flex items-center gap-2">
-          <select
-            value={hotel}
-            onChange={(e) => setHotel(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-300/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-          >
-            <option>All hotels</option>
-            {dataset.hotels.map((h) => <option key={h} value={h}>{h}</option>)}
-          </select>
+        <div className="flex flex-wrap items-center gap-2">
+          <Dropdown
+            value={chanF}
+            options={[ALL_CHAN, ...dataset.channels]}
+            onChange={setChanF}
+            minWidth={140}
+            ariaLabel="Filter by channel"
+            label="Channel"
+          />
+          <Dropdown
+            value={promoF}
+            options={[ALL_PROMO, ...dataset.plans]}
+            onChange={setPromoF}
+            minWidth={140}
+            ariaLabel="Filter by promo"
+            label="Promotion"
+          />
           <div className="flex gap-1">
             {(["promo", "channel"] as const).map((d) => (
               <button

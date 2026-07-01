@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-// first letters of the first two words, e.g. "Arbour Hotel and Residence" -> "AH"
-function initials(s: string): string {
-  const words = s.trim().split(/\s+/).filter(Boolean);
-  return ((words[0]?.[0] ?? "") + (words[1]?.[0] ?? "")).toUpperCase() || "?";
-}
-
 // Styled single-select dropdown — replaces the native <select> so we control the look.
 // Portal-rendered (fixed) to escape ancestor backdrop-blur / overflow clipping.
 export function Dropdown({
@@ -15,21 +9,36 @@ export function Dropdown({
   onChange,
   minWidth = 180,
   ariaLabel,
+  label = "Hotel",
+  format = (v) => v,
 }: {
   value: string;
   options: string[];
   onChange: (v: string) => void;
   minWidth?: number;
   ariaLabel?: string;
+  label?: string;
+  format?: (v: string) => string;
 }) {
   const [open, setOpen] = useState(false);
-  const [entered, setEntered] = useState(false); // drives the open transition
+  const [render, setRender] = useState(false); // stays true through the fade-out
+  const [entered, setEntered] = useState(false); // drives enter/exit transition
   const [pos, setPos] = useState({ top: 0, left: 0, width: minWidth });
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popRef = useRef<HTMLDivElement>(null);
 
+  // mount on open; on close, fade out first then unmount after the transition
   useEffect(() => {
-    if (!open) return;
+    if (open) { setRender(true); return; }
+    if (!render) return;
+    setEntered(false);
+    const t = setTimeout(() => setRender(false), 160);
+    return () => clearTimeout(t);
+  }, [open, render]);
+
+  // once mounted, place it, trigger the enter transition, wire the listeners
+  useEffect(() => {
+    if (!render) return;
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node;
       if (triggerRef.current?.contains(t) || popRef.current?.contains(t)) return;
@@ -48,13 +57,12 @@ export function Dropdown({
     window.addEventListener("resize", place);
     return () => {
       cancelAnimationFrame(raf);
-      setEntered(false);
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
       window.removeEventListener("scroll", place, true);
       window.removeEventListener("resize", place);
     };
-  }, [open, minWidth]);
+  }, [render, minWidth]);
 
   return (
     <div className="relative">
@@ -65,7 +73,7 @@ export function Dropdown({
         style={{ minWidth }}
         className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-orange-300/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:border-slate-600"
       >
-        <span className="truncate">{value}</span>
+        <span className="truncate">{format(value)}</span>
         <svg
           className={"h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform " + (open ? "rotate-180" : "")}
           viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6"
@@ -74,25 +82,20 @@ export function Dropdown({
         </svg>
       </button>
 
-      {open && createPortal(
+      {render && createPortal(
         <div
           ref={popRef}
-          style={{ position: "fixed", top: pos.top + 24, left: pos.left, width: Math.max(pos.width, 232) }}
+          style={{ position: "fixed", top: pos.top, left: pos.left, width: Math.max(pos.width, 264) }}
           className={
-            "relative z-[100] origin-top-right rounded-tl-[16px] rounded-tr-[46px] rounded-b-[20px] bg-gradient-to-b from-[#c2653c] via-slate-700 to-slate-800 p-2 pt-6 shadow-2xl ring-1 ring-black/5 transition duration-200 ease-out " +
-            (entered ? "translate-y-0 scale-100 opacity-100" : "-translate-y-1 scale-95 opacity-0")
+            "z-[100] origin-top overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-black/5 transition duration-150 ease-out dark:border-slate-700 dark:bg-slate-900 " +
+            (entered ? "translate-y-0 scale-100 opacity-100" : "-translate-y-1 scale-[0.98] opacity-0")
           }
         >
-          {/* avatar protrudes at the top-right, seated in the stretched curved corner */}
-          <div className="absolute -top-4 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#eaa079] to-[#d97742] text-xs font-bold text-white shadow-md ring-2 ring-white/40">
-            {initials(value)}
-          </div>
-          <div className="mb-1.5 px-1.5">
-            <div className="text-[9px] font-semibold uppercase tracking-wider text-white/60">Hotel</div>
-            <div className="truncate pr-12 text-[12.5px] font-bold text-white">{value}</div>
+          <div className="px-2.5 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            {label}
           </div>
 
-          <div className="flex max-h-64 flex-col gap-1 overflow-auto pr-0.5">
+          <div className="flex max-h-72 flex-col gap-0.5 overflow-auto">
             {options.map((opt) => {
               const sel = opt === value;
               return (
@@ -100,18 +103,20 @@ export function Dropdown({
                   key={opt}
                   onClick={() => { onChange(opt); setOpen(false); }}
                   className={
-                    "flex w-full items-center gap-2 rounded-full px-2.5 py-1.5 text-left text-[12.5px] transition " +
+                    "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition " +
                     (sel
-                      ? "bg-white font-semibold text-[#c2571f] shadow"
-                      : "bg-white/90 text-slate-700 hover:bg-white")
+                      ? "bg-orange-50 font-semibold text-orange-700 dark:bg-orange-500/10 dark:text-orange-300"
+                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800")
                   }
                 >
-                  <span className={"flex h-5 w-5 shrink-0 items-center justify-center rounded-full " + (sel ? "bg-[#c2571f]/12 text-[#c2571f]" : "bg-slate-400/15 text-slate-500")}>
-                    <svg className="h-3 w-3" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M3 14V3.5A1.5 1.5 0 0 1 4.5 2h5A1.5 1.5 0 0 1 11 3.5V6h1.5A1.5 1.5 0 0 1 14 7.5V14h-3v-2.5h-2V14H3Zm2-8h1.5V4.5H5V6Zm2.75 0H9.5V4.5H7.75V6ZM5 9.25h1.5V7.75H5v1.5Zm2.75 0H9.5V7.75H7.75v1.5Z" />
-                    </svg>
+                  <span className="flex w-4 shrink-0 justify-center text-orange-600 dark:text-orange-400">
+                    {sel && (
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3.5 8.5 6.5 11.5 12.5 5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
                   </span>
-                  <span className="truncate">{opt}</span>
+                  <span className="truncate">{format(opt)}</span>
                 </button>
               );
             })}

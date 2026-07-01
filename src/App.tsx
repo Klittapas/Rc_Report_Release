@@ -191,6 +191,7 @@ export function App() {
         <ChannelPromoHeatmap
           dataset={dataset}
           segments={activeSegments}
+          hotel={hotels[selected]?.name ?? ""}
           startIdx={startIdx}
           endIdx={endIdx}
           dark={dark}
@@ -213,6 +214,7 @@ export function App() {
         <WeeklyBreakdown
           dataset={dataset}
           segments={activeSegments}
+          hotel={hotels[selected]?.name ?? ""}
           startIdx={startIdx}
           endIdx={endIdx}
           dark={dark}

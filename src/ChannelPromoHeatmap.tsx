@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Dataset } from "./aggregate.ts";
 import { fmt, fmtK } from "./format.ts";
+import { Dropdown } from "./Dropdown.tsx";
 
 const H = 0, S = 1, P = 2, C = 3, D = 4, ROOMS = 5, REV = 6, RT = 7;
 const ALL_ROOMS = "All room types";
@@ -8,21 +9,22 @@ const ALL_ROOMS = "All room types";
 export function ChannelPromoHeatmap({
   dataset,
   segments,
+  hotel,
   startIdx,
   endIdx,
   dark,
 }: {
   dataset: Dataset;
   segments: Set<string>;
+  hotel: string;
   startIdx: number;
   endIdx: number;
   dark: boolean;
 }) {
   const [metric, setMetric] = useState<"revenue" | "rooms">("revenue");
-  const [hotel, setHotel] = useState<string>("All hotels");
   const [room, setRoom] = useState<string>(ALL_ROOMS);
   const colIdx = metric === "revenue" ? REV : ROOMS;
-  const hotelIdx = dataset.hotels.indexOf(hotel); // -1 when "All hotels"
+  const hotelIdx = dataset.hotels.indexOf(hotel); // follows top hotel selection
   const roomTypes = dataset.roomTypes ?? [];
   const hasRooms = roomTypes.length > 0;
 
@@ -99,24 +101,16 @@ export function ChannelPromoHeatmap({
           Channel × Promotion — which OTA drives which promo
         </h4>
         <div className="flex items-center gap-2">
-          <select
-            value={hotel}
-            onChange={(e) => setHotel(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-300/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-          >
-            <option>All hotels</option>
-            {dataset.hotels.map((h) => <option key={h} value={h}>{h}</option>)}
-          </select>
           {hasRooms && (
-            <select
+            <Dropdown
               value={roomActive ? room : ALL_ROOMS}
-              onChange={(e) => setRoom(e.target.value)}
-              title="Filter by room type code"
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-300/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-            >
-              <option>{ALL_ROOMS}</option>
-              {roomOptions.map((rc) => <option key={rc} value={rc}>{rc.toUpperCase()}</option>)}
-            </select>
+              options={[ALL_ROOMS, ...roomOptions]}
+              onChange={setRoom}
+              minWidth={150}
+              ariaLabel="Filter by room type code"
+              label="Room type"
+              format={(v) => (v === ALL_ROOMS ? v : v.toUpperCase())}
+            />
           )}
           <div className="flex gap-1">
             {(["revenue", "rooms"] as const).map((m) => (
