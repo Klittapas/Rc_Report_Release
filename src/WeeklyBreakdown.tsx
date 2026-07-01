@@ -64,7 +64,7 @@ export function WeeklyBreakdown({
       itemTotal.set(r[dimIdx], (itemTotal.get(r[dimIdx]) || 0) + r[colIdx]);
     }
     const weekKeys = [...byWeek.keys()].sort((a, b) => a - b);
-    const topItems = [...itemTotal.entries()].sort((a, b) => b[1] - a[1]).slice(0, TOP_N).map((e) => e[0]);
+    const topItems = [...itemTotal.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, TOP_N).map((e) => e[0]);
     return {
       weeks: weekKeys.map((w) => `Week ${w}`),
       series: topItems.map((ii) => ({
