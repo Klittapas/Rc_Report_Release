@@ -102,7 +102,7 @@ export function ChannelPromoHeatmap({
           <select
             value={hotel}
             onChange={(e) => setHotel(e.target.value)}
-            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-300/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           >
             <option>All hotels</option>
             {dataset.hotels.map((h) => <option key={h} value={h}>{h}</option>)}
@@ -112,7 +112,7 @@ export function ChannelPromoHeatmap({
               value={roomActive ? room : ALL_ROOMS}
               onChange={(e) => setRoom(e.target.value)}
               title="Filter by room type code"
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-400/50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-orange-300/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             >
               <option>{ALL_ROOMS}</option>
               {roomOptions.map((rc) => <option key={rc} value={rc}>{rc.toUpperCase()}</option>)}
@@ -126,7 +126,7 @@ export function ChannelPromoHeatmap({
                 className={
                   "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition " +
                   (metric === m
-                    ? "bg-orange-600 text-white dark:bg-orange-500"
+                    ? "bg-[#e0743f] text-white dark:bg-[#e0743f]"
                     : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
                 }
               >

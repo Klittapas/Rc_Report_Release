@@ -126,7 +126,7 @@ export function DateRangePicker({
 
   const triggerCls =
     "flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm " +
-    "text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-orange-400/50 " +
+    "text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-1 focus:ring-orange-300/40 " +
     "dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700";
 
   return (
@@ -155,7 +155,7 @@ export function DateRangePicker({
                   className={
                     "rounded-md px-2.5 py-1 text-xs font-semibold transition " +
                     (active
-                      ? "bg-orange-600 text-white dark:bg-orange-500"
+                      ? "bg-[#e0743f] text-white dark:bg-[#e0743f]"
                       : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
                   }
                 >
@@ -213,9 +213,9 @@ export function DateRangePicker({
                   key={ds}
                   className={
                     "py-0.5 " +
-                    (inRange && !edge ? "bg-orange-100 dark:bg-orange-500/20 " : "") +
-                    (inRange && isStart ? "rounded-l-full bg-orange-100 dark:bg-orange-500/20 " : "") +
-                    (inRange && isEnd ? "rounded-r-full bg-orange-100 dark:bg-orange-500/20 " : "")
+                    (inRange && !edge ? "bg-orange-100 dark:bg-[#e0743f]/20 " : "") +
+                    (inRange && isStart ? "rounded-l-full bg-orange-100 dark:bg-[#e0743f]/20 " : "") +
+                    (inRange && isEnd ? "rounded-r-full bg-orange-100 dark:bg-[#e0743f]/20 " : "")
                   }
                 >
                   <button
@@ -227,7 +227,7 @@ export function DateRangePicker({
                       (disabled
                         ? "cursor-default text-slate-300 dark:text-slate-700"
                         : edge
-                          ? "bg-orange-600 font-semibold text-white dark:bg-orange-500"
+                          ? "bg-[#e0743f] font-semibold text-white dark:bg-[#e0743f]"
                           : inRange
                             ? "text-orange-700 dark:text-orange-300"
                             : "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800")

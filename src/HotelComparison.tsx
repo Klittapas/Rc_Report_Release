@@ -81,7 +81,7 @@ export function HotelComparison({
               className={
                 "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition " +
                 (metric === m.key
-                  ? "bg-orange-600 text-white dark:bg-orange-500"
+                  ? "bg-[#e0743f] text-white dark:bg-[#e0743f]"
                   : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
               }
             >
