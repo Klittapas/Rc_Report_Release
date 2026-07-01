@@ -48,6 +48,26 @@ export function WeeklyBreakdown({
   const chanFIdx = chanF === ALL_CHAN ? -1 : dataset.channels.indexOf(chanF);
   const promoFIdx = promoF === ALL_PROMO ? -1 : dataset.plans.indexOf(promoF);
 
+  // cascading options: only list channels/promos that actually have data given the
+  // other active filters (segment, date, hotel, and the opposite dropdown)
+  const { chanOptions, promoOptions } = useMemo(() => {
+    const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
+    const chSet = new Set<number>();
+    const prSet = new Set<number>();
+    for (const r of dataset.rows) {
+      if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
+      if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      if (promoFIdx < 0 || r[P] === promoFIdx) chSet.add(r[C]); // channels for the chosen promo
+      if (chanFIdx < 0 || r[C] === chanFIdx) prSet.add(r[P]);   // promos for the chosen channel
+    }
+    const chans = dataset.channels.filter((_, i) => chSet.has(i));
+    const promos = dataset.plans.filter((_, i) => prSet.has(i));
+    // keep the current selection visible even if the opposite filter excluded it
+    if (chanF !== ALL_CHAN && !chans.includes(chanF)) chans.push(chanF);
+    if (promoF !== ALL_PROMO && !promos.includes(promoF)) promos.push(promoF);
+    return { chanOptions: [ALL_CHAN, ...chans], promoOptions: [ALL_PROMO, ...promos] };
+  }, [dataset, segments, startIdx, endIdx, hotelIdx, chanFIdx, promoFIdx, chanF, promoF]);
+
   const { weeks, series } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
     const byWeek = new Map<number, Map<number, number>>();
@@ -88,7 +108,7 @@ export function WeeklyBreakdown({
         <div className="flex flex-wrap items-center gap-2">
           <Dropdown
             value={chanF}
-            options={[ALL_CHAN, ...dataset.channels]}
+            options={chanOptions}
             onChange={setChanF}
             minWidth={140}
             ariaLabel="Filter by channel"
@@ -96,7 +116,7 @@ export function WeeklyBreakdown({
           />
           <Dropdown
             value={promoF}
-            options={[ALL_PROMO, ...dataset.plans]}
+            options={promoOptions}
             onChange={setPromoF}
             minWidth={140}
             ariaLabel="Filter by promo"
