@@ -1,7 +1,10 @@
-export const fmt = (n: number) => "$" + n.toLocaleString("en-US");
+export const fmt = (n: number) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US");
 
-export const fmtK = (n: number) =>
-  n >= 1e6 ? "$" + (n / 1e6).toFixed(2) + "M" : n >= 1000 ? "$" + Math.round(n / 1000) + "K" : "$" + n;
+export const fmtK = (n: number) => {
+  const sign = n < 0 ? "-$" : "$";
+  const a = Math.abs(n);
+  return a >= 1e6 ? sign + (a / 1e6).toFixed(2) + "M" : a >= 1000 ? sign + Math.round(a / 1000) + "K" : sign + a;
+};
 
 // Muted, cohesive cool palette for a clean look (blues / slate / teal / indigo).
 export const PROMO_COLORS: Record<string, string> = {
