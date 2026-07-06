@@ -46,26 +46,50 @@ export function ChannelPromoHeatmap({
   const roomActive = rowDim === "channel" && room !== ALL_ROOMS && roomOptions.includes(room);
   const roomIdx = roomActive ? roomTypes.indexOf(room) : -1;
 
-  // row axis is switchable: OTA channel or room type code
+  // row axis is switchable: channel/segment hybrid or room type code
   const byRoom = rowDim === "room" && hasRooms;
-  const rowLabels = byRoom ? roomTypes : dataset.channels;
-  const rowKeyIdx = byRoom ? RT : C;
+  // hybrid rows: OTA-segment bookings split by rate-code channel; everything else
+  // groups under its market segment (rate-code channels are only reliable for OTA)
+  const otaSegIdx = dataset.segments.indexOf("OTA");
+  // rate-code channels that are NOT real OTAs — when these show up inside the OTA
+  // segment it's a miscoded booking, so flag the row as "OTA · <channel>"
+  const NON_OTA_CHANNELS = new Set(["Direct", "Internal", "Corporate", "UNKNOWN_REVIEW"]);
+  // row keys are strings: "c<idx>" = channel, "o<idx>" = OTA-segment w/ non-OTA code,
+  // "s<idx>" = segment, "r<idx>" = room type
+  const rowLabel = (k: string) => {
+    const i = Number(k.slice(1));
+    if (k[0] === "c") return dataset.channels[i];
+    if (k[0] === "o") return "OTA · " + dataset.channels[i] + " code";
+    if (k[0] === "s") return dataset.segments[i];
+    return (roomTypes[i] || "").toUpperCase();
+  };
+  // the market segment a row rolls up to — shown on hover so a channel row
+  // (Agoda) reads as "OTA", a room-type row as "Room type"
+  const rowSegment = (k: string) => {
+    if (k[0] === "c" || k[0] === "o") return "OTA";
+    if (k[0] === "s") return dataset.segments[Number(k.slice(1))];
+    return "Room type";
+  };
 
   const { rows, cols, cell, rowTotal, planTotal, maxCell, grand, top } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
-    const cell = new Map<string, number>(); // `${row}|${p}` -> value
-    const rowTotal = new Map<number, number>();
+    const cell = new Map<string, number>(); // `${rowKey}|${p}` -> value
+    const rowTotal = new Map<string, number>();
     const planTotal = new Map<number, number>();
     let grand = 0;
     let maxCell = 0;
-    let top = { c: -1, p: -1, v: 0 };
+    let top = { c: "", p: -1, v: 0 };
 
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
       if (roomIdx >= 0 && r[RT] !== roomIdx) continue;
       const v = r[colIdx];
-      const rk = r[rowKeyIdx];
+      const rk = byRoom
+        ? "r" + r[RT]
+        : r[S] === otaSegIdx
+          ? (NON_OTA_CHANNELS.has(dataset.channels[r[C]]) ? "o" : "c") + r[C]
+          : "s" + r[S];
       const key = rk + "|" + r[P];
       const nv = (cell.get(key) || 0) + v;
       cell.set(key, nv);
@@ -76,11 +100,11 @@ export function ChannelPromoHeatmap({
       if (nv > top.v) top = { c: rk, p: r[P], v: nv };
     }
 
-    // rows (channels or room types) and promos (cols) that have data, biggest first
+    // rows (channels/segments or room types) and promos (cols) that have data, biggest first
     const rows = [...rowTotal.entries()].sort((a, b) => b[1] - a[1]).map((e) => e[0]);
     const cols = [...planTotal.entries()].sort((a, b) => b[1] - a[1]).map((e) => e[0]);
     return { rows, cols, cell, rowTotal, planTotal, maxCell, grand, top };
-  }, [dataset, segments, startIdx, endIdx, colIdx, hotelIdx, roomIdx, rowKeyIdx]);
+  }, [dataset, segments, startIdx, endIdx, colIdx, hotelIdx, roomIdx, byRoom, otaSegIdx]);
 
   const fmtVal = (v: number) => (metric === "revenue" ? fmtK(v) : v.toLocaleString());
   const fmtFull = (v: number) => (metric === "revenue" ? fmt(v) : v.toLocaleString() + " rooms");
@@ -160,10 +184,10 @@ export function ChannelPromoHeatmap({
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
-        {top.c >= 0 ? (
+        {top.c !== "" ? (
           <>
             Hottest: <b className="text-orange-600 dark:text-orange-400">
-              {dataset.plans[top.p]} {byRoom ? "on" : "via"} {byRoom ? (rowLabels[top.c] || "").toUpperCase() : rowLabels[top.c]}
+              {dataset.plans[top.p]} {byRoom ? "on" : "via"} {rowLabel(top.c)}
             </b>{" "}
             ({fmtFull(top.v)}) · darker = more {metric}
             {roomActive && <> · room <b className="text-slate-500 dark:text-slate-300">{room.toUpperCase()}</b></>}
@@ -193,15 +217,26 @@ export function ChannelPromoHeatmap({
           <tbody>
             {rows.map((c) => (
               <tr key={c}>
-                <td className="sticky left-0 z-10 bg-white px-2 py-1 text-left text-[11.5px] font-semibold text-slate-700 dark:bg-slate-900 dark:text-slate-200 whitespace-nowrap">
-                  {byRoom ? (rowLabels[c] || "").toUpperCase() : rowLabels[c]}
+                <td
+                  title={`Segment: ${rowSegment(c)}`}
+                  className={
+                    "sticky left-0 z-10 cursor-help bg-white px-2 py-1 text-left text-[11.5px] font-semibold whitespace-nowrap dark:bg-slate-900 " +
+                    (rowSegment(c) === "OTA"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-slate-700 dark:text-slate-200")
+                  }
+                >
+                  {rowSegment(c) === "OTA" && (
+                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-blue-500 align-middle" />
+                  )}
+                  {rowLabel(c)}
                 </td>
                 {cols.map((p) => {
                   const v = cell.get(c + "|" + p) || 0;
                   return (
                     <td
                       key={p}
-                      title={`${byRoom ? (rowLabels[c] || "").toUpperCase() : rowLabels[c]} · ${dataset.plans[p]}: ${fmtFull(v)}`}
+                      title={`${rowLabel(c)} · ${dataset.plans[p]}: ${fmtFull(v)}`}
                       className="px-2 py-1 text-[11px] font-semibold tabular-nums"
                       style={{ backgroundColor: bg(v), color: txt(v) }}
                     >

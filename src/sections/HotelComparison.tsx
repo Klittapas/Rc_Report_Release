@@ -3,6 +3,8 @@ import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend,
 } from "chart.js";
+import type { Plugin } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { HotelAgg } from "../data/aggregate.ts";
 import { HOTEL_INVENTORY } from "../data/aggregate.ts";
 import { fmt, fmtK } from "../data/format.ts";
@@ -98,6 +100,7 @@ export function HotelComparison({
       </p>
       <div className="relative h-[300px]">
         <Bar
+          plugins={[ChartDataLabels as Plugin<"bar">]}
           data={{
             labels: ranked.map((h) => shortName(h.name)),
             datasets: [{
@@ -111,6 +114,7 @@ export function HotelComparison({
           options={{
             indexAxis: "y",
             maintainAspectRatio: false,
+            layout: { padding: { right: 54 } }, // room for the value label past the bar end
             onClick: (_e, els) => {
               if (els.length) onSelect(ranked[els[0].index].name);
             },
@@ -120,6 +124,14 @@ export function HotelComparison({
             },
             plugins: {
               legend: { display: false },
+              datalabels: {
+                anchor: "end",
+                align: "end",
+                clamp: true,
+                color: label,
+                font: { size: 10.5, weight: 700 },
+                formatter: (v: number) => fmtVal(metric, v),
+              },
               tooltip: {
                 callbacks: {
                   label: (c) => {

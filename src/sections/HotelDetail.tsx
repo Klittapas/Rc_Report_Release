@@ -1,19 +1,31 @@
-import { Bar } from "react-chartjs-2";
+import { useState } from "react";
+import { Chart } from "react-chartjs-2";
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend,
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement,
+  LineElement, Tooltip, Legend, LineController, BarController,
 } from "chart.js";
 import type { HotelAgg } from "../data/aggregate.ts";
 import { fmt, fmtK, PROMO_COLORS } from "../data/format.ts";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale, LinearScale, BarElement, PointElement, LineElement,
+  Tooltip, Legend, LineController, BarController,
+);
 
 export function HotelDetail({ hotel, dark }: { hotel: HotelAgg; dark: boolean }) {
+  const [metric, setMetric] = useState<"revenue" | "rooms">("revenue");
   const grid = dark ? "rgba(148,163,184,0.15)" : "rgba(100,116,139,0.15)";
   const tick = dark ? "#94a3b8" : "#64748b";
   const label = dark ? "#e2e8f0" : "#334155";
   const accent2 = dark ? "#fb923c" : "#ea580c";
-  const promos = hotel.promos;
-  const maxRev = promos[0]?.revenue ?? 0;
+  const adrColor = dark ? "#60a5fa" : "#2563eb";
+  // bars sorted by the active metric so the chart reads high -> low either way
+  const promos = [...hotel.promos].sort((a, b) =>
+    metric === "revenue" ? b.revenue - a.revenue : b.rooms - a.rooms,
+  );
+  const barVal = (p: (typeof promos)[number]) => (metric === "revenue" ? p.revenue : p.rooms);
+  const maxVal = promos[0] ? barVal(promos[0]) : 0;
+  const fmtBar = (v: number) => (metric === "revenue" ? fmtK(v) : v.toLocaleString());
 
   if (hotel.total_revenue === 0) {
     return (
@@ -47,35 +59,87 @@ export function HotelDetail({ hotel, dark }: { hotel: HotelAgg; dark: boolean })
 
       <div className="grid grid-cols-1 gap-4">
         <div className={box}>
-          <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Revenue by Promotion</h4>
-          <p className="mb-2.5 text-[11px] text-slate-400">Sorted high → low — orange bar is the top earner</p>
+          <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+            <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
+              {metric === "revenue" ? "Revenue" : "Room Nights"} by Promotion
+            </h4>
+            <div className="flex gap-1">
+              {(["revenue", "rooms"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMetric(m)}
+                  className={
+                    "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition " +
+                    (metric === m
+                      ? "bg-[#e0743f] text-white dark:bg-[#e0743f]"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
+                  }
+                >
+                  {m === "rooms" ? "Room Nights" : "Revenue"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="mb-2.5 text-[11px] text-slate-400">
+            Bars = {metric === "revenue" ? "revenue" : "room nights"} (left) · line = ADR (right) · orange bar is the top {metric === "revenue" ? "earner" : "seller"}
+          </p>
           <div className="relative h-75">
-            <Bar
+            <Chart
+              type="bar"
               data={{
                 labels: promos.map((p) => p.plan),
-                datasets: [{
-                  data: promos.map((p) => p.revenue),
-                  backgroundColor: promos.map((p) =>
-                    p.revenue === maxRev ? accent2 : (PROMO_COLORS[p.plan] || "#94a3b8") + "cc"),
-                  borderRadius: 7, maxBarThickness: 46,
-                }],
+                datasets: [
+                  {
+                    type: "bar" as const,
+                    label: metric === "revenue" ? "Revenue" : "Room Nights",
+                    data: promos.map(barVal),
+                    backgroundColor: promos.map((p) =>
+                      barVal(p) === maxVal ? accent2 : (PROMO_COLORS[p.plan] || "#94a3b8") + "cc"),
+                    borderRadius: 7, maxBarThickness: 46,
+                    yAxisID: "y",
+                    order: 2,
+                  },
+                  {
+                    type: "line" as const,
+                    label: "ADR",
+                    data: promos.map((p) => p.adr),
+                    borderColor: adrColor,
+                    backgroundColor: adrColor,
+                    borderWidth: 2,
+                    pointRadius: 3.5,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    yAxisID: "y1",
+                    order: 1,
+                  },
+                ],
               }}
               options={{
-                indexAxis: "y", maintainAspectRatio: false,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
                 plugins: {
-                  legend: { display: false },
+                  legend: { labels: { color: label, usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
                   tooltip: {
                     callbacks: {
                       label: (c) => {
                         const p = promos[c.dataIndex];
-                        return [` Revenue: ${fmt(p.revenue)}`, ` Rooms: ${p.rooms}  ADR: ${fmt(p.adr)}`];
+                        return c.dataset.label === "ADR"
+                          ? ` ADR: ${fmt(p.adr)}`
+                          : [` Revenue: ${fmt(p.revenue)}`, ` Room nights: ${p.rooms.toLocaleString()}`];
                       },
                     },
                   },
                 },
                 scales: {
-                  x: { ticks: { color: tick, callback: (v) => fmtK(Number(v)) }, grid: { color: grid } },
-                  y: { ticks: { color: label, font: { weight: 600 } }, grid: { display: false } },
+                  x: { ticks: { color: label, font: { weight: 600, size: 10 }, maxRotation: 30 }, grid: { display: false } },
+                  y: {
+                    position: "left", beginAtZero: true,
+                    ticks: { color: tick, callback: (v) => fmtBar(Number(v)) }, grid: { color: grid },
+                  },
+                  y1: {
+                    position: "right", beginAtZero: true,
+                    ticks: { color: adrColor, callback: (v) => fmt(Number(v)) }, grid: { display: false },
+                  },
                 },
               }}
             />
