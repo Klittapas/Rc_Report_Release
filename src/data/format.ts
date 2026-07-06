@@ -1,7 +1,7 @@
-export const fmt = (n: number) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString("en-US");
+export const fmt = (n: number) => (n < 0 ? "-฿" : "฿") + Math.abs(n).toLocaleString("en-US");
 
 export const fmtK = (n: number) => {
-  const sign = n < 0 ? "-$" : "$";
+  const sign = n < 0 ? "-฿" : "฿";
   const a = Math.abs(n);
   return a >= 1e6 ? sign + (a / 1e6).toFixed(2) + "M" : a >= 1000 ? sign + Math.round(a / 1000) + "K" : sign + a;
 };

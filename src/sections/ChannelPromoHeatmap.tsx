@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import type { Dataset } from "./aggregate.ts";
-import { fmt, fmtK } from "./format.ts";
-import { Dropdown } from "./Dropdown.tsx";
+import type { Dataset } from "../data/aggregate.ts";
+import { fmt, fmtK } from "../data/format.ts";
+import { Dropdown } from "../ui/Dropdown.tsx";
 
 const H = 0, S = 1, P = 2, C = 3, D = 4, ROOMS = 5, REV = 6, RT = 7;
 const ALL_ROOMS = "All room types";
