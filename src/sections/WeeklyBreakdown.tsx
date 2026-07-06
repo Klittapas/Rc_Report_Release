@@ -19,8 +19,13 @@ const TOP_N = 4; // stacked segments per week (keep it readable)
 // stack bottom -> top: navy, dark red, red-orange, coral (rank 1..4)
 const REDS = ["#1e3050", "#b1333f", "#d6473c", "#ea5c43"];
 
-// calendar week of month: 1-7=Wk1, 8-14=Wk2, 15-21=Wk3, 22-end=Wk4
-const weekOf = (iso: string) => Math.min(Math.floor((parseInt(iso.slice(8, 10), 10) - 1) / 7) + 1, 4);
+// continuous week-of-year: 4 weeks per month, so Jan = 1-4, Feb = 5-8, … Jun = 21-24
+// within a month: 1-7=Wk1, 8-14=Wk2, 15-21=Wk3, 22-end=Wk4
+const weekOf = (iso: string) => {
+  const month = parseInt(iso.slice(5, 7), 10);
+  const weekInMonth = Math.min(Math.floor((parseInt(iso.slice(8, 10), 10) - 1) / 7) + 1, 4);
+  return (month - 1) * 4 + weekInMonth;
+};
 
 export function WeeklyBreakdown({
   dataset,
@@ -157,7 +162,7 @@ export function WeeklyBreakdown({
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
-        Top {TOP_N} {dim === "promo" ? "promos" : "channels"} · stacked per week · Wk1 = day 1-7, Wk2 = 8-14, Wk3 = 15-21, Wk4 = 22-end
+        Top {TOP_N} {dim === "promo" ? "promos" : "channels"} · stacked per week · week-of-year, 4 per month (Jan 1-4 … Jun 21-24)
       </p>
       <div className="relative h-[340px]">
         <Bar

@@ -100,9 +100,11 @@ export function ChannelPromoHeatmap({
       if (nv > top.v) top = { c: rk, p: r[P], v: nv };
     }
 
-    // rows (channels/segments or room types) and promos (cols) that have data, biggest first
-    const rows = [...rowTotal.entries()].sort((a, b) => b[1] - a[1]).map((e) => e[0]);
-    const cols = [...planTotal.entries()].sort((a, b) => b[1] - a[1]).map((e) => e[0]);
+    // rows (channels/segments or room types) and promos (cols) that have data, biggest
+    // first; drop anything whose net total is exactly 0 (no activity) but keep negatives
+    // (net-negative = cancellations outweigh bookings, still worth showing)
+    const rows = [...rowTotal.entries()].filter(([, v]) => v !== 0).sort((a, b) => b[1] - a[1]).map((e) => e[0]);
+    const cols = [...planTotal.entries()].filter(([, v]) => v !== 0).sort((a, b) => b[1] - a[1]).map((e) => e[0]);
     return { rows, cols, cell, rowTotal, planTotal, maxCell, grand, top };
   }, [dataset, segments, startIdx, endIdx, colIdx, hotelIdx, roomIdx, byRoom, otaSegIdx]);
 
@@ -219,16 +221,8 @@ export function ChannelPromoHeatmap({
               <tr key={c}>
                 <td
                   title={`Segment: ${rowSegment(c)}`}
-                  className={
-                    "sticky left-0 z-10 cursor-help bg-white px-2 py-1 text-left text-[11.5px] font-semibold whitespace-nowrap dark:bg-slate-900 " +
-                    (rowSegment(c) === "OTA"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-slate-700 dark:text-slate-200")
-                  }
+                  className="sticky left-0 z-10 bg-white px-2 py-1 text-left text-[11.5px] font-semibold text-slate-700 whitespace-nowrap dark:bg-slate-900 dark:text-slate-200"
                 >
-                  {rowSegment(c) === "OTA" && (
-                    <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-blue-500 align-middle" />
-                  )}
                   {rowLabel(c)}
                 </td>
                 {cols.map((p) => {
