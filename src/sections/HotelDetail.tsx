@@ -2,8 +2,8 @@ import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend,
 } from "chart.js";
-import type { HotelAgg } from "./aggregate.ts";
-import { fmt, fmtK, PROMO_COLORS } from "./format.ts";
+import type { HotelAgg } from "../data/aggregate.ts";
+import { fmt, fmtK, PROMO_COLORS } from "../data/format.ts";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 

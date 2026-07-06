@@ -31,8 +31,8 @@ PORT=4000 bun run dev
 ## Data & privacy
 
 - **Nothing real is committed.** `data/` and all `*.csv` / `*.xlsx` are git-ignored, and the
-  bundled `src/dataset.json` is an empty placeholder.
-- **Upload is 100% client-side** — `src/normalize.ts` parses the CSV in the browser
+  bundled `src/data/dataset.json` is an empty placeholder.
+- **Upload is 100% client-side** — `src/data/normalize.ts` parses the CSV in the browser
   (`file.text()` → in-memory `Dataset`). No network request leaves the page.
 - Access control is **whoever holds the CSV**: the public page is useless without a file.
 - See `RATECODE.md` for how raw rate codes decode into Channel / Promotion / Refundable / Breakfast.
@@ -72,15 +72,16 @@ Asset paths are relative, so it works under that sub-path with no extra config.
 
 | File | Purpose |
 |------|---------|
-| `src/normalize.ts` | In-browser CSV → compact `Dataset` (mirrors `scripts/normalize_csv.py`) |
+| `src/data/normalize.ts` | In-browser CSV → compact `Dataset` (mirrors `scripts/normalize_csv.py`) |
 | `scripts/normalize_csv.py` | Offline Python normalizer (raw CSV → dataset) |
 | `scripts/build.ts` | Production build with the Tailwind plugin |
 | `index.html` | Bun entry point |
-| `src/aggregate.ts` | Filter + aggregate rows into per-hotel metrics; rate inventory |
+| `src/data/aggregate.ts` | Filter + aggregate rows into per-hotel metrics; rate inventory |
 | `src/App.tsx` | Layout, filter state, theme, empty/upload landing |
-| `src/Controls.tsx` · `DateRangePicker.tsx` | Segment chips, date range, upload, theme |
-| `src/PromoByHotel.tsx` · `ChannelPromoHeatmap.tsx` · `HotelComparison.tsx` · `WeeklyBreakdown.tsx` · `DailyTrend.tsx` · `HotelDetail.tsx` | Charts |
-| `src/format.ts` | Formatters + color palettes |
+| `src/ui/Controls.tsx` · `DateRangePicker.tsx` | Segment chips, date range, upload, theme |
+| `src/sections/PromoByHotel.tsx` · `ChannelPromoHeatmap.tsx` · `HotelComparison.tsx` · `WeeklyBreakdown.tsx` · `DailyTrend.tsx` · `HotelDetail.tsx` | Charts |
+| `src/data/format.ts` | Formatters + color palettes |
 | `RATECODE.md` | Rate-code decoding reference |
+| `docs/FUNCTIONS.md` | Per-function reference for every file (Thai) |
 
 `legacy/` holds the original single-file HTML prototype.

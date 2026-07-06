@@ -1,7 +1,7 @@
 # Rate Code Reference
 
 How raw rate codes are decoded into Channel / Promotion / Refundable / Breakfast.
-Source of truth: [src/normalize.ts](src/normalize.ts) (browser) + [scripts/normalize_csv.py](scripts/normalize_csv.py) (offline).
+Source of truth: [src/data/normalize.ts](src/data/normalize.ts) (browser) + [scripts/normalize_csv.py](scripts/normalize_csv.py) (offline).
 
 ---
 

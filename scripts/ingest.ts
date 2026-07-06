@@ -1,6 +1,6 @@
 /**
  * Ingest: read data/Ratecode_NORMALIZED_Lastest.xlsx and emit a compact,
- * filter-ready dataset to src/dataset.json.
+ * filter-ready dataset to src/data/dataset.json.
  *
  * Run with:  bun run ingest
  *
@@ -18,7 +18,7 @@ import * as XLSX from "xlsx";
 import { resolve } from "path";
 
 const XLSX_PATH = resolve(import.meta.dir, "../data/Ratecode_NORMALIZED_30days.xlsx");
-const OUT_PATH = resolve(import.meta.dir, "../src/dataset.json");
+const OUT_PATH = resolve(import.meta.dir, "../src/data/dataset.json");
 const SHEET = "Daily Normalized";
 
 type Raw = {

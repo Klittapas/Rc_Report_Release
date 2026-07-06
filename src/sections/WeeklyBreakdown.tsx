@@ -5,9 +5,9 @@ import {
 } from "chart.js";
 import type { Plugin } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-import type { Dataset } from "./aggregate.ts";
-import { fmt, fmtK } from "./format.ts";
-import { Dropdown } from "./Dropdown.tsx";
+import type { Dataset } from "../data/aggregate.ts";
+import { fmt, fmtK } from "../data/format.ts";
+import { Dropdown } from "../ui/Dropdown.tsx";
 
 const ALL_CHAN = "All channels";
 const ALL_PROMO = "All promos";

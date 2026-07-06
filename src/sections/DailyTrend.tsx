@@ -3,8 +3,8 @@ import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, PointElement,
   LineElement, Tooltip, Legend, Filler, LineController, BarController,
 } from "chart.js";
-import type { HotelAgg } from "./aggregate.ts";
-import { fmt, fmtK } from "./format.ts";
+import type { HotelAgg } from "../data/aggregate.ts";
+import { fmt, fmtK } from "../data/format.ts";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, PointElement, LineElement,

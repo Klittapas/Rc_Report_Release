@@ -1,16 +1,16 @@
 import { useMemo, useState } from "react";
-import { dataset as bundledDataset, aggregate } from "./aggregate.ts";
-import type { Dataset } from "./aggregate.ts";
-import { normalizeCsv } from "./normalize.ts";
-import { PromoByHotel } from "./PromoByHotel.tsx";
-import { DailyTrend } from "./DailyTrend.tsx";
-import { ChannelPromoHeatmap } from "./ChannelPromoHeatmap.tsx";
-import { HotelComparison } from "./HotelComparison.tsx";
-import { WeeklyBreakdown } from "./WeeklyBreakdown.tsx";
-import { HotelDetail } from "./HotelDetail.tsx";
-import { Controls } from "./Controls.tsx";
-import { useTheme } from "./useTheme.ts";
-import { fmtK } from "./format.ts";
+import { dataset as bundledDataset, aggregate } from "./data/aggregate.ts";
+import type { Dataset } from "./data/aggregate.ts";
+import { normalizeCsv } from "./data/normalize.ts";
+import { PromoByHotel } from "./sections/PromoByHotel.tsx";
+import { DailyTrend } from "./sections/DailyTrend.tsx";
+import { ChannelPromoHeatmap } from "./sections/ChannelPromoHeatmap.tsx";
+import { HotelComparison } from "./sections/HotelComparison.tsx";
+import { WeeklyBreakdown } from "./sections/WeeklyBreakdown.tsx";
+import { HotelDetail } from "./sections/HotelDetail.tsx";
+import { Controls } from "./ui/Controls.tsx";
+import { useTheme } from "./hooks/useTheme.ts";
+import { fmtK } from "./data/format.ts";
 
 export function App() {
   const [theme, toggleTheme] = useTheme();

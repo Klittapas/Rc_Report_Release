@@ -1,5 +1,5 @@
-import type { HotelAgg } from "./aggregate.ts";
-import { fmt, fmtK, scoreHex } from "./format.ts";
+import type { HotelAgg } from "../data/aggregate.ts";
+import { fmt, fmtK, scoreHex } from "../data/format.ts";
 
 export function HotelCard({
   hotel,

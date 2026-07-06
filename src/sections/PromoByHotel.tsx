@@ -2,8 +2,8 @@ import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend,
 } from "chart.js";
-import type { HotelAgg } from "./aggregate.ts";
-import { fmt, fmtK } from "./format.ts";
+import type { HotelAgg } from "../data/aggregate.ts";
+import { fmt, fmtK } from "../data/format.ts";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
 

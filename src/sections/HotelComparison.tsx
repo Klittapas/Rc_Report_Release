@@ -3,9 +3,9 @@ import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend,
 } from "chart.js";
-import type { HotelAgg } from "./aggregate.ts";
-import { HOTEL_INVENTORY } from "./aggregate.ts";
-import { fmt, fmtK } from "./format.ts";
+import type { HotelAgg } from "../data/aggregate.ts";
+import { HOTEL_INVENTORY } from "../data/aggregate.ts";
+import { fmt, fmtK } from "../data/format.ts";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
