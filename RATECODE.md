@@ -46,7 +46,7 @@ The promotion category. For **BAR / Basic Deal / Package** it also splits by ref
 | type | Flex (refund `f`) | NRF (refund `n`) |
 |------|-------------------|------------------|
 | `bar` | BAR Flex | BAR NRF |
-| `bdr` | Basic Deal | Basic Deal (NRF) |
+| `bdr` | Basic Deal Flex | Basic Deal (NRF) |
 | `pkg` | Package Flex | Package (NRF) |
 
 Refund-independent types:

@@ -15,7 +15,7 @@ export const PROMO_COLORS: Record<string, string> = {
   // Early Bird tiers (teals)
   "Early Bird S": "#99f6e4", "Early Bird M": "#2dd4bf", "Early Bird L": "#0f766e",
   // Basic Deal (indigos)
-  "Basic Deal": "#a5b4fc", "Basic Deal (NRF)": "#6366f1",
+  "Basic Deal Flex": "#a5b4fc", "Basic Deal (NRF)": "#6366f1",
   // Package (sky)
   "Package Flex": "#bae6fd", "Package (NRF)": "#0ea5e9",
   // BAR (slate-blue)

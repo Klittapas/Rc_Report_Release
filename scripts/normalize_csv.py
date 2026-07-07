@@ -49,13 +49,13 @@ TYPE_BASE = {
 # type -> (Flex label, NRF label) for the families that split by refund policy
 TYPE_SPLIT = {
     "bar": ("BAR Flex", "BAR NRF"),
-    "bdr": ("Basic Deal", "Basic Deal (NRF)"),
+    "bdr": ("Basic Deal Flex", "Basic Deal (NRF)"),
     "pkg": ("Package Flex", "Package (NRF)"),
 }
 
 # Display order for the Hotel x Promo pivot (extras appended automatically).
 PROMO_ORDER = [
-    "BAR Flex", "BAR NRF", "Basic Deal", "Basic Deal (NRF)", "Promotion", "POS",
+    "BAR Flex", "BAR NRF", "Basic Deal Flex", "Basic Deal (NRF)", "Promotion", "POS",
     "Package Flex", "Package (NRF)", "Early Bird S", "Early Bird M", "Early Bird L",
     "Min Stay S", "Min Stay M", "Min Stay L", "Open",
 ]

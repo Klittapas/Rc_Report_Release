@@ -6,8 +6,9 @@ import {
 import type { Plugin } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { Dataset } from "../data/aggregate.ts";
-import { fmt, fmtK } from "../data/format.ts";
+import { fmt, fmtK, PROMO_COLORS, CHANNEL_PALETTE } from "../data/format.ts";
 import { Dropdown } from "../ui/Dropdown.tsx";
+import { MultiSelect } from "../ui/MultiSelect.tsx";
 
 const ALL_CHAN = "All channels";
 const ALL_PROMO = "All promos";
@@ -15,19 +16,17 @@ const ALL_PROMO = "All promos";
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 const H = 0, S = 1, P = 2, C = 3, D = 4, ROOMS = 5, REV = 6;
-const TOP_N = 4; // stacked segments per week (keep it readable)
-// stack bottom -> top: navy, dark red, red-orange, coral (rank 1..4)
-const REDS = ["#1e3050", "#b1333f", "#d6473c", "#ea5c43"];
+const DEFAULT_SHOWN = 4; 
+const BAR_THICK = 40; 
+const OTHER_COLOR = "#94a3b8"; 
 
-// calendar week-of-year matching Power BI / Excel WEEKNUM (return_type 1):
-// weeks start Sunday, week 1 is the week containing Jan 1. e.g. Jul 7 2026 -> week 28.
 const weekOf = (iso: string) => {
   const y = parseInt(iso.slice(0, 4), 10);
   const mo = parseInt(iso.slice(5, 7), 10);
   const da = parseInt(iso.slice(8, 10), 10);
   const jan1 = Date.UTC(y, 0, 1);
-  const dayOfYear = Math.floor((Date.UTC(y, mo - 1, da) - jan1) / 86400000); // 0-based
-  const jan1Dow = new Date(jan1).getUTCDay(); // 0 = Sunday
+  const dayOfYear = Math.floor((Date.UTC(y, mo - 1, da) - jan1) / 86400000); 
+  const jan1Dow = new Date(jan1).getUTCDay(); 
   return Math.floor((dayOfYear + jan1Dow) / 7) + 1;
 };
 
@@ -48,17 +47,22 @@ export function WeeklyBreakdown({
 }) {
   const [metric, setMetric] = useState<"revenue" | "rooms">("revenue");
   const [dim, setDim] = useState<"promo" | "channel">("promo");
+  const [pickedByDim, setPickedByDim] = useState<{ promo: string[]; channel: string[] }>({ promo: [], channel: [] });
   const [chanF, setChanF] = useState<string>(ALL_CHAN);
   const [promoF, setPromoF] = useState<string>(ALL_PROMO);
   const colIdx = metric === "revenue" ? REV : ROOMS;
   const dimIdx = dim === "promo" ? P : C;
   const names = dim === "promo" ? dataset.plans : dataset.channels;
-  const hotelIdx = dataset.hotels.indexOf(hotel); // follows top hotel selection
+
+  const colorFor = (name: string) =>
+    dim === "promo"
+      ? PROMO_COLORS[name] ?? OTHER_COLOR
+      : CHANNEL_PALETTE[Math.max(0, dataset.channels.indexOf(name)) % CHANNEL_PALETTE.length];
+  
+  const hotelIdx = dataset.hotels.indexOf(hotel); 
   const chanFIdx = chanF === ALL_CHAN ? -1 : dataset.channels.indexOf(chanF);
   const promoFIdx = promoF === ALL_PROMO ? -1 : dataset.plans.indexOf(promoF);
 
-  // cascading options: only list channels/promos that actually have data given the
-  // other active filters (segment, date, hotel, and the opposite dropdown)
   const { chanOptions, promoOptions } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
     const chSet = new Set<number>();
@@ -66,21 +70,56 @@ export function WeeklyBreakdown({
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
-      if (promoFIdx < 0 || r[P] === promoFIdx) chSet.add(r[C]); // channels for the chosen promo
-      if (chanFIdx < 0 || r[C] === chanFIdx) prSet.add(r[P]);   // promos for the chosen channel
+      if (promoFIdx < 0 || r[P] === promoFIdx) chSet.add(r[C]); 
+      if (chanFIdx < 0 || r[C] === chanFIdx) prSet.add(r[P]);   
     }
     const chans = dataset.channels.filter((_, i) => chSet.has(i));
     const promos = dataset.plans.filter((_, i) => prSet.has(i));
-    // keep the current selection visible even if the opposite filter excluded it
     if (chanF !== ALL_CHAN && !chans.includes(chanF)) chans.push(chanF);
     if (promoF !== ALL_PROMO && !promos.includes(promoF)) promos.push(promoF);
     return { chanOptions: [ALL_CHAN, ...chans], promoOptions: [ALL_PROMO, ...promos] };
   }, [dataset, segments, startIdx, endIdx, hotelIdx, chanFIdx, promoFIdx, chanF, promoF]);
 
-  const { weeks, series } = useMemo(() => {
+  const universe = useMemo(() => {
+    const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
+    const total = new Map<number, number>();
+    for (const r of dataset.rows) {
+      if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
+      if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      if (chanFIdx >= 0 && r[C] !== chanFIdx) continue;
+      if (promoFIdx >= 0 && r[P] !== promoFIdx) continue;
+      total.set(r[dimIdx], (total.get(r[dimIdx]) || 0) + r[colIdx]);
+    }
+    return [...total.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([i]) => names[i]);
+  }, [dataset, segments, startIdx, endIdx, colIdx, dimIdx, hotelIdx, chanFIdx, promoFIdx, names]);
+
+  const pickedNames = pickedByDim[dim];
+  const chosen = pickedNames.length ? pickedNames.filter((n) => universe.includes(n)) : universe.slice(0, DEFAULT_SHOWN);
+  const chosenKey = chosen.join("|");
+  const isCustom = pickedNames.length > 0;
+
+  // 🚀 จุดที่ปรับปรุง: จำกัดให้เลือกได้สูงสุด 7 อัน
+  const togglePick = (name: string) =>
+    setPickedByDim((prev) => {
+      const base = prev[dim].length ? prev[dim] : universe.slice(0, DEFAULT_SHOWN);
+      const isAlreadyPicked = base.includes(name);
+      
+      // ถ้าแตะเพื่อเอาออก -> ยอมให้ทำได้เสมอ
+      if (isAlreadyPicked) {
+        return { ...prev, [dim]: base.filter((n) => n !== name) };
+      }
+      
+      // ถ้าแตะเพื่อเพิ่มอันใหม่ -> ต้องเช็คก่อนว่าครบ 7 หรือยัง
+      if (base.length >= 7) {
+        return prev; // เกิน 7 อันแล้ว ไม่ยอมให้อัปเดตสเตต (กดเพิ่มไม่ได้)
+      }
+      
+      return { ...prev, [dim]: [...base, name] };
+    });
+
+  const { weeks, series, otherItems } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
     const byWeek = new Map<number, Map<number, number>>();
-    const itemTotal = new Map<number, number>();
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
@@ -90,22 +129,36 @@ export function WeeklyBreakdown({
       let m = byWeek.get(wk);
       if (!m) { m = new Map(); byWeek.set(wk, m); }
       m.set(r[dimIdx], (m.get(r[dimIdx]) || 0) + r[colIdx]);
-      itemTotal.set(r[dimIdx], (itemTotal.get(r[dimIdx]) || 0) + r[colIdx]);
     }
     const weekKeys = [...byWeek.keys()].sort((a, b) => a - b);
-    const topItems = [...itemTotal.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, TOP_N).map((e) => e[0]);
-    return {
-      weeks: weekKeys.map((w) => `Week ${w}`),
-      series: topItems.map((ii) => ({
-        plan: names[ii],
-        data: weekKeys.map((wk) => byWeek.get(wk)!.get(ii) || 0),
-      })),
-    };
-  }, [dataset, segments, startIdx, endIdx, colIdx, dimIdx, hotelIdx, chanFIdx, promoFIdx]);
+    const topItems = chosen.map((n) => names.indexOf(n)).filter((i) => i >= 0);
+    const topSet = new Set(topItems);
+    
+    const otherData = weekKeys.map((wk) => {
+      let sum = 0;
+      for (const [ii, v] of byWeek.get(wk)!) if (!topSet.has(ii)) sum += v;
+      return sum;
+    });
+    const hasOther = otherData.some((v) => v !== 0);
+    const series = topItems.map((ii) => ({
+      label: names[ii],
+      color: colorFor(names[ii]),
+      data: weekKeys.map((wk) => byWeek.get(wk)!.get(ii) || 0),
+    }));
+    if (hasOther) series.push({ label: "Other", color: OTHER_COLOR, data: otherData });
+
+    const otherItems = weekKeys.map((wk) => {
+      const list: { label: string; value: number }[] = [];
+      for (const [ii, v] of byWeek.get(wk)!) if (!topSet.has(ii) && v !== 0) list.push({ label: names[ii], value: v });
+      return list.sort((a, b) => b.value - a.value);
+    });
+    return { weeks: weekKeys.map((w) => `Week ${w}`), series, otherItems };
+  }, [dataset, segments, startIdx, endIdx, colIdx, dimIdx, hotelIdx, chanFIdx, promoFIdx, chosenKey, names]);
 
   const tick = dark ? "#94a3b8" : "#64748b";
   const label = dark ? "#e2e8f0" : "#334155";
   const grid = dark ? "rgba(148,163,184,0.15)" : "rgba(100,116,139,0.15)";
+  const surface = dark ? "#0f172a" : "#ffffff"; 
   const fmtVal = (v: number) => (metric === "revenue" ? fmtK(v) : v.toLocaleString());
 
   return (
@@ -163,30 +216,44 @@ export function WeeklyBreakdown({
               </button>
             ))}
           </div>
+          <div className="border-l border-slate-200 pl-2 dark:border-slate-700">
+            <MultiSelect
+              options={universe}
+              selected={new Set(chosen)}
+              onToggle={togglePick}
+              minWidth={150}
+              ariaLabel={`Pick which ${dim === "promo" ? "promotions" : "channels"} to show`}
+              label={`Show ${dim === "promo" ? "promotions" : "channels"}`}
+              triggerText={`Showing ${chosen.length}`}
+            />
+          </div>
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
-        Top {TOP_N} {dim === "promo" ? "promos" : "channels"} · stacked per week · calendar week-of-year (Power BI WEEKNUM, weeks start Sunday)
+        {isCustom ? "Your picks" : `Top ${chosen.length}`} {dim === "promo" ? "promos" : "channels"} + Other · tick any to choose · max 7 items · stacked per week · calendar week-of-year (Power BI WEEKNUM, weeks start Sunday)
       </p>
-      <div className="relative h-[340px]">
+      
+      <div className="relative h-[500px]">
         <Bar
           plugins={[ChartDataLabels as Plugin<"bar">]}
           data={{
             labels: weeks,
             datasets: series.map((s, i) => {
-              const R = 35, last = series.length - 1; // half of maxBarThickness = full capsule ends
+              const R = BAR_THICK / 2, last = series.length - 1; 
               const radius = series.length === 1
                 ? R
                 : i === 0 ? { bottomLeft: R, bottomRight: R, topLeft: 0, topRight: 0 }
                   : i === last ? { topLeft: R, topRight: R, bottomLeft: 0, bottomRight: 0 }
                     : 0;
               return {
-                label: s.plan,
+                label: s.label,
                 data: s.data,
-                backgroundColor: REDS[i] ?? REDS[REDS.length - 1],
+                backgroundColor: s.color,
+                borderColor: surface,
+                borderWidth: { top: 2, bottom: 2, left: 0, right: 0 }, 
                 borderRadius: radius,
                 borderSkipped: false,
-                maxBarThickness: 70,
+                maxBarThickness: BAR_THICK,
                 stack: "w",
               };
             }),
@@ -195,12 +262,30 @@ export function WeeklyBreakdown({
             maintainAspectRatio: false,
             plugins: {
               legend: { position: "top", align: "start", labels: { color: label, usePointStyle: true, boxWidth: 8, font: { size: 11.5, weight: 600 }, padding: 14 } },
-              tooltip: { callbacks: { label: (c) => ` ${c.dataset.label}: ${metric === "revenue" ? fmt(Number(c.raw)) : Number(c.raw).toLocaleString()}` } },
+              tooltip: {
+                callbacks: {
+                  label: (c) => {
+                    const f = (v: number) => (metric === "revenue" ? fmt(v) : v.toLocaleString());
+                    const base = ` ${c.dataset.label}: ${f(Number(c.raw))}`;
+                    if (c.dataset.label !== "Other") return base;
+                    const items = otherItems[c.dataIndex] ?? [];
+                    const shown = items.slice(0, 8).map((it) => `   • ${it.label}: ${f(it.value)}`);
+                    if (items.length > 8) shown.push(`   +${items.length - 8} more`);
+                    return [base, ...shown];
+                  },
+                },
+              },
               datalabels: {
                 anchor: "center",
                 align: "center",
                 color: "#fff",
                 font: { size: 9.5, weight: 700 },
+                display: (ctx) => {
+                  const v = Number(ctx.dataset.data[ctx.dataIndex]) || 0;
+                  if (v <= 0) return false;
+                  const y = ctx.chart.scales.y;
+                  return Math.abs(y.getPixelForValue(0) - y.getPixelForValue(v)) >= 12;
+                },
                 formatter: (v: number) => (v > 0 ? fmtVal(v) : ""),
               },
             },

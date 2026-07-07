@@ -7,9 +7,10 @@ export type Dataset = {
   plans: string[];
   channels: string[];
   dates: string[];
-  roomTypes?: string[]; // optional: index space for the trailing roomTypeIdx (column 7)
-  // [hotelIdx, segIdx, planIdx, chanIdx, dateIdx, rooms, revenue, roomTypeIdx?]
-  // roomTypeIdx is appended last so existing column indices stay stable.
+  roomTypes?: string[]; // optional: index space for roomTypeIdx (column 7)
+  boards?: string[];    // optional: index space for boardIdx (column 8) — RB / RO / —
+  // [hotelIdx, segIdx, planIdx, chanIdx, dateIdx, rooms, revenue, roomTypeIdx?, boardIdx?]
+  // roomTypeIdx then boardIdx are appended last so existing column indices stay stable.
   rows: number[][];
 };
 

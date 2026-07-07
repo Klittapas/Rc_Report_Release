@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-const WD = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const WD = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]; // week starts Monday
 const MON = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -109,10 +109,11 @@ export function DateRangePicker({
   // build the visible month grid
   const year = view.getFullYear();
   const month = view.getMonth();
-  const firstDow = new Date(year, month, 1).getDay();
+  const firstDow = new Date(year, month, 1).getDay(); // 0 = Sunday
+  const lead = (firstDow + 6) % 7; // leading blanks for a Monday-first week
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells: (number | null)[] = [];
-  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let i = 0; i < lead; i++) cells.push(null);
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   const canPrev = new Date(year, month, 1) > minD;

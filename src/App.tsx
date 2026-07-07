@@ -7,6 +7,7 @@ import { DailyTrend } from "./sections/DailyTrend.tsx";
 import { ChannelPromoHeatmap } from "./sections/ChannelPromoHeatmap.tsx";
 import { HotelComparison } from "./sections/HotelComparison.tsx";
 import { WeeklyBreakdown } from "./sections/WeeklyBreakdown.tsx";
+import { BoardByChannel } from "./sections/BoardByChannel.tsx";
 import { HotelDetail } from "./sections/HotelDetail.tsx";
 import { Controls } from "./ui/Controls.tsx";
 import { useTheme } from "./hooks/useTheme.ts";
@@ -189,6 +190,18 @@ export function App() {
           Promotion source · which OTA channel drives each promo
         </div>
         <ChannelPromoHeatmap
+          dataset={dataset}
+          segments={activeSegments}
+          hotel={hotels[selected]?.name ?? ""}
+          startIdx={startIdx}
+          endIdx={endIdx}
+          dark={dark}
+        />
+
+        <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
+          Board mix · RO vs RB per channel
+        </div>
+        <BoardByChannel
           dataset={dataset}
           segments={activeSegments}
           hotel={hotels[selected]?.name ?? ""}
