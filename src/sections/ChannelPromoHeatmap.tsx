@@ -5,6 +5,8 @@ import { Dropdown } from "../ui/Dropdown.tsx";
 
 const H = 0, S = 1, P = 2, C = 3, D = 4, ROOMS = 5, REV = 6, RT = 7;
 const ALL_ROOMS = "All room types";
+const ALL_CHANNELS = "All channels";
+type RR = { rev: number; rooms: number }; // revenue + rooms kept per cell so ADR (rev/rooms) is derivable
 
 export function ChannelPromoHeatmap({
   dataset,
@@ -21,10 +23,11 @@ export function ChannelPromoHeatmap({
   endIdx: number;
   dark: boolean;
 }) {
-  const [metric, setMetric] = useState<"revenue" | "rooms">("revenue");
+  const [metric, setMetric] = useState<"revenue" | "rooms" | "adr">("revenue");
   const [room, setRoom] = useState<string>(ALL_ROOMS);
   const [rowDim, setRowDim] = useState<"channel" | "room">("channel");
-  const colIdx = metric === "revenue" ? REV : ROOMS;
+  const [colDim, setColDim] = useState<"promo" | "room">("promo");
+  const [chan, setChan] = useState<string>(ALL_CHANNELS);
   const hotelIdx = dataset.hotels.indexOf(hotel); // follows top hotel selection
   const roomTypes = dataset.roomTypes ?? [];
   const hasRooms = roomTypes.length > 0;
@@ -41,13 +44,31 @@ export function ChannelPromoHeatmap({
     return [...set].sort();
   }, [dataset, hotelIdx, hasRooms]);
 
+  // channel codes present for the current hotel filter (drives the channel dropdown)
+  const channelOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of dataset.rows) {
+      if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      set.add(dataset.channels[r[C]]);
+    }
+    return [...set].sort();
+  }, [dataset, hotelIdx]);
+
   // selected room is only applied when it still exists for the chosen hotel
-  // (and never when room type is the row axis — the axis already splits by room)
-  const roomActive = rowDim === "channel" && room !== ALL_ROOMS && roomOptions.includes(room);
+  // (never when room type is an axis — the axis already splits by room)
+  const roomActive = rowDim === "channel" && colDim !== "room" && room !== ALL_ROOMS && roomOptions.includes(room);
   const roomIdx = roomActive ? roomTypes.indexOf(room) : -1;
+
+  // channel filter drills into one OTA (e.g. "Agoda sells which room on which promo").
+  // never applied while channel is the row axis — the axis already splits by channel.
+  const chanActive = rowDim === "room" && chan !== ALL_CHANNELS && channelOptions.includes(chan);
+  const chanIdx = chanActive ? dataset.channels.indexOf(chan) : -1;
 
   // row axis is switchable: channel/segment hybrid or room type code
   const byRoom = rowDim === "room" && hasRooms;
+  // col axis is switchable: promotion (default) or room type code
+  const byColRoom = colDim === "room" && hasRooms;
+  // row and col can't both be room type — guarded in the toggle handlers
   // hybrid rows: OTA-segment bookings split by rate-code channel; everything else
   // groups under its market segment (rate-code channels are only reliable for OTA)
   const otaSegIdx = dataset.segments.indexOf("OTA");
@@ -70,47 +91,71 @@ export function ChannelPromoHeatmap({
     if (k[0] === "s") return dataset.segments[Number(k.slice(1))];
     return "Room type";
   };
+  // column label: promotion name, or room-type code when the col axis is room type
+  const colLabel = (i: number) => (byColRoom ? (roomTypes[i] || "").toUpperCase() : dataset.plans[i]);
+
+  // display value for the active metric; ADR = weighted rev/rooms so it works for
+  // cells AND totals (a total's ADR is its own revenue over its own rooms, not a sum)
+  const cellVal = (rr?: RR): number =>
+    !rr ? 0 : metric === "revenue" ? rr.rev : metric === "rooms" ? rr.rooms : rr.rooms ? Math.round(rr.rev / rr.rooms) : 0;
 
   const { rows, cols, cell, rowTotal, planTotal, maxCell, grand, top } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
-    const cell = new Map<string, number>(); // `${rowKey}|${p}` -> value
-    const rowTotal = new Map<string, number>();
-    const planTotal = new Map<number, number>();
-    let grand = 0;
-    let maxCell = 0;
-    let top = { c: "", p: -1, v: 0 };
+    const cell = new Map<string, RR>(); // `${rowKey}|${col}` -> { rev, rooms }
+    const rowTotal = new Map<string, RR>();
+    const planTotal = new Map<number, RR>();
+    const grand: RR = { rev: 0, rooms: 0 };
+    const add = (m: Map<string | number, RR>, k: string | number, rev: number, rooms: number) => {
+      const c = m.get(k);
+      if (c) { c.rev += rev; c.rooms += rooms; } else m.set(k, { rev, rooms });
+    };
 
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
       if (roomIdx >= 0 && r[RT] !== roomIdx) continue;
-      const v = r[colIdx];
+      if (chanIdx >= 0 && r[C] !== chanIdx) continue;
+      const rev = r[REV], rooms = r[ROOMS];
       const rk = byRoom
         ? "r" + r[RT]
         : r[S] === otaSegIdx
           ? (NON_OTA_CHANNELS.has(dataset.channels[r[C]]) ? "o" : "c") + r[C]
           : "s" + r[S];
-      const key = rk + "|" + r[P];
-      const nv = (cell.get(key) || 0) + v;
-      cell.set(key, nv);
-      rowTotal.set(rk, (rowTotal.get(rk) || 0) + v);
-      planTotal.set(r[P], (planTotal.get(r[P]) || 0) + v);
-      grand += v;
-      if (nv > maxCell) maxCell = nv;
-      if (nv > top.v) top = { c: rk, p: r[P], v: nv };
+      const ck = byColRoom ? r[RT] : r[P];
+      add(cell as Map<string | number, RR>, rk + "|" + ck, rev, rooms);
+      add(rowTotal as Map<string | number, RR>, rk, rev, rooms);
+      add(planTotal as Map<string | number, RR>, ck, rev, rooms);
+      grand.rev += rev; grand.rooms += rooms;
     }
 
-    // rows (channels/segments or room types) and promos (cols) that have data, biggest
-    // first; drop anything whose net total is exactly 0 (no activity) but keep negatives
-    // (net-negative = cancellations outweigh bookings, still worth showing)
-    const rows = [...rowTotal.entries()].filter(([, v]) => v !== 0).sort((a, b) => b[1] - a[1]).map((e) => e[0]);
-    const cols = [...planTotal.entries()].filter(([, v]) => v !== 0).sort((a, b) => b[1] - a[1]).map((e) => e[0]);
-    return { rows, cols, cell, rowTotal, planTotal, maxCell, grand, top };
-  }, [dataset, segments, startIdx, endIdx, colIdx, hotelIdx, roomIdx, byRoom, otaSegIdx]);
+    // color scale + hottest cell measured on the active metric's display value
+    let maxCell = 0;
+    let top = { c: "", p: -1, v: 0 };
+    for (const [k, rr] of cell) {
+      const dv = cellVal(rr);
+      if (dv > maxCell) maxCell = dv;
+      if (dv > top.v) { const bar = k.indexOf("|"); top = { c: k.slice(0, bar), p: Number(k.slice(bar + 1)), v: dv }; }
+    }
 
-  const fmtVal = (v: number) => (metric === "revenue" ? fmtK(v) : v.toLocaleString());
-  const fmtFull = (v: number) => (metric === "revenue" ? fmt(v) : v.toLocaleString() + " rooms");
-  const fmtTotal = (v: number) => (metric === "revenue" ? fmt(v) : v.toLocaleString()); // exact integer, no K/M
+    // order rows/cols by revenue magnitude (stable when toggling metric); drop fully-empty
+    // (net 0 rev + 0 rooms) but keep net-negative (cancellations outweigh bookings)
+    const nonEmpty = (rr: RR) => rr.rev !== 0 || rr.rooms !== 0;
+    const rows = [...rowTotal.entries()].filter(([, rr]) => nonEmpty(rr)).sort((a, b) => b[1].rev - a[1].rev).map((e) => e[0]);
+    const cols = [...planTotal.entries()].filter(([, rr]) => nonEmpty(rr)).sort((a, b) => b[1].rev - a[1].rev).map((e) => e[0]);
+    return { rows, cols, cell, rowTotal, planTotal, maxCell, grand, top };
+  }, [dataset, segments, startIdx, endIdx, metric, hotelIdx, roomIdx, chanIdx, byRoom, byColRoom, otaSegIdx]);
+
+  // revenue is big -> K/M; rooms are counts; ADR is a compact rate -> show exact baht
+  const fmtVal = (v: number) => (metric === "revenue" ? fmtK(v) : metric === "rooms" ? v.toLocaleString() : fmt(v));
+  const fmtFull = (v: number) =>
+    metric === "rooms" ? v.toLocaleString() + " rooms" : metric === "adr" ? fmt(v) + " ADR" : fmt(v);
+  const fmtTotal = (v: number) => (metric === "rooms" ? v.toLocaleString() : fmt(v)); // exact, no K/M
+  // part B: always-on tooltip with the full breakdown regardless of active metric
+  const cellTip = (rowLbl: string, colLbl: string, rr?: RR) => {
+    const rooms = rr?.rooms ?? 0, rev = rr?.rev ?? 0;
+    const adr = rooms ? Math.round(rev / rooms) : 0;
+    return `${rowLbl} · ${colLbl}: ${rooms.toLocaleString()} rooms · ${fmt(rev)} · ADR ${fmt(adr)}`;
+  };
 
   // orange intensity; sqrt so mid values stay visible
   const bg = (v: number) => {
@@ -133,17 +178,19 @@ export function ChannelPromoHeatmap({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <h4 className="mb-2 text-[13px] font-bold text-slate-700 dark:text-slate-200">
+        {(byRoom ? "Room type" : "Channel") + " × " + (byColRoom ? "Room type" : "Promotion")}
+        {chanActive && <span className="font-normal text-slate-400"> — {chan}: which room on which promo</span>}
+        {!chanActive && byColRoom && !byRoom && <span className="font-normal text-slate-400"> — which room each channel sells</span>}
+      </h4>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
-          {byRoom ? "Room type × Promotion — which room sells on which promo" : "Channel × Promotion — which OTA drives which promo"}
-        </h4>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {hasRooms && (
             <div className="flex gap-1">
               {(["channel", "room"] as const).map((d) => (
                 <button
                   key={d}
-                  onClick={() => setRowDim(d)}
+                  onClick={() => { setRowDim(d); if (d === "room" && colDim === "room") setColDim("promo"); }}
                   className={
                     "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition " +
                     (rowDim === d
@@ -156,19 +203,26 @@ export function ChannelPromoHeatmap({
               ))}
             </div>
           )}
-          {hasRooms && !byRoom && (
-            <Dropdown
-              value={roomActive ? room : ALL_ROOMS}
-              options={[ALL_ROOMS, ...roomOptions]}
-              onChange={setRoom}
-              minWidth={150}
-              ariaLabel="Filter by room type code"
-              label="Room type"
-              format={(v) => (v === ALL_ROOMS ? v : v.toUpperCase())}
-            />
+          {hasRooms && (
+            <div className="flex gap-1">
+              {(["promo", "room"] as const).map((d) => (
+                <button
+                  key={d}
+                  onClick={() => { setColDim(d); if (d === "room" && rowDim === "room") setRowDim("channel"); }}
+                  className={
+                    "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition " +
+                    (colDim === d
+                      ? "bg-slate-700 text-white dark:bg-slate-600"
+                      : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
+                  }
+                >
+                  {d === "promo" ? "× Promo" : "× Room"}
+                </button>
+              ))}
+            </div>
           )}
           <div className="flex gap-1">
-            {(["revenue", "rooms"] as const).map((m) => (
+            {(["revenue", "rooms", "adr"] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setMetric(m)}
@@ -179,20 +233,47 @@ export function ChannelPromoHeatmap({
                     : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")
                 }
               >
-                {m === "rooms" ? "Rooms" : "Revenue"}
+                {m === "rooms" ? "Rooms" : m === "adr" ? "ADR" : "Revenue"}
               </button>
             ))}
           </div>
+          {/* filter sits after the toggles (last item) so appearing/disappearing never shifts the buttons to its left */}
+          {hasRooms && ((!byRoom && !byColRoom) || byRoom) && (
+            <div className="ml-1 flex items-center border-l border-slate-200 pl-2 dark:border-slate-700">
+              {!byRoom && !byColRoom && (
+                <Dropdown
+                  value={roomActive ? room : ALL_ROOMS}
+                  options={[ALL_ROOMS, ...roomOptions]}
+                  onChange={setRoom}
+                  minWidth={132}
+                  ariaLabel="Filter by room type code"
+                  label="Room type"
+                  format={(v) => (v === ALL_ROOMS ? v : v.toUpperCase())}
+                />
+              )}
+              {byRoom && (
+                <Dropdown
+                  value={chanActive ? chan : ALL_CHANNELS}
+                  options={[ALL_CHANNELS, ...channelOptions]}
+                  onChange={setChan}
+                  minWidth={132}
+                  ariaLabel="Filter by channel"
+                  label="Channel"
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
         {top.c !== "" ? (
           <>
             Hottest: <b className="text-orange-600 dark:text-orange-400">
-              {dataset.plans[top.p]} {byRoom ? "on" : "via"} {rowLabel(top.c)}
+              {colLabel(top.p)} {byColRoom ? "in" : byRoom ? "on" : "via"} {rowLabel(top.c)}
             </b>{" "}
-            ({fmtFull(top.v)}) · darker = more {metric}
+            ({fmtFull(top.v)}) · darker = {metric === "adr" ? "higher ADR" : "more " + metric}
             {roomActive && <> · room <b className="text-slate-500 dark:text-slate-300">{room.toUpperCase()}</b></>}
+            {chanActive && <> · channel <b className="text-slate-500 dark:text-slate-300">{chan}</b></>}
             {" "}· reflects segment + date filters
           </>
         ) : (
@@ -200,8 +281,8 @@ export function ChannelPromoHeatmap({
         )}
       </p>
 
-      {/* keyed remount so the drill-in animation replays when the row axis flips */}
-      <div key={rowDim} className="drill-in overflow-x-auto">
+      {/* keyed remount so the drill-in animation replays when either axis flips */}
+      <div key={rowDim + colDim} className="drill-in overflow-x-auto">
         <table className="w-full border-separate border-spacing-0 text-right">
           <thead>
             <tr>
@@ -210,7 +291,7 @@ export function ChannelPromoHeatmap({
               </th>
               {cols.map((p) => (
                 <th key={p} className={headCls + " whitespace-nowrap"}>
-                  {dataset.plans[p]}
+                  {colLabel(p)}
                 </th>
               ))}
               <th className={headCls + " border-l border-slate-200 dark:border-slate-700"}>Total</th>
@@ -226,11 +307,12 @@ export function ChannelPromoHeatmap({
                   {rowLabel(c)}
                 </td>
                 {cols.map((p) => {
-                  const v = cell.get(c + "|" + p) || 0;
+                  const rr = cell.get(c + "|" + p);
+                  const v = cellVal(rr);
                   return (
                     <td
                       key={p}
-                      title={`${rowLabel(c)} · ${dataset.plans[p]}: ${fmtFull(v)}`}
+                      title={cellTip(rowLabel(c), colLabel(p), rr)}
                       className="px-2 py-1 text-[11px] font-semibold tabular-nums"
                       style={{ backgroundColor: bg(v), color: txt(v) }}
                     >
@@ -240,9 +322,9 @@ export function ChannelPromoHeatmap({
                 })}
                 <td
                   className="border-l border-slate-200 px-2 py-1 text-[11px] font-bold tabular-nums text-slate-700 dark:border-slate-700 dark:text-slate-200 whitespace-nowrap"
-                  style={totStyle(rowTotal.get(c) || 0)}
+                  style={totStyle(cellVal(rowTotal.get(c)))}
                 >
-                  {fmtTotal(rowTotal.get(c) || 0)}
+                  {fmtTotal(cellVal(rowTotal.get(c)))}
                 </td>
               </tr>
             ))}
@@ -255,16 +337,16 @@ export function ChannelPromoHeatmap({
                 <td
                   key={p}
                   className="border-t border-slate-200 px-2 py-1 text-[11px] font-bold tabular-nums text-slate-700 dark:border-slate-700 dark:text-slate-200 whitespace-nowrap"
-                  style={totStyle(planTotal.get(p) || 0)}
+                  style={totStyle(cellVal(planTotal.get(p)))}
                 >
-                  {fmtTotal(planTotal.get(p) || 0)}
+                  {fmtTotal(cellVal(planTotal.get(p)))}
                 </td>
               ))}
               <td
                 className="border-l border-t border-slate-200 px-2 py-1 text-[11px] font-extrabold tabular-nums text-orange-600 dark:border-slate-700 dark:text-orange-400 whitespace-nowrap"
-                style={totStyle(grand)}
+                style={totStyle(cellVal(grand))}
               >
-                {fmtTotal(grand)}
+                {fmtTotal(cellVal(grand))}
               </td>
             </tr>
           </tbody>

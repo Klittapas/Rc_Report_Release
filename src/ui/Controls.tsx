@@ -42,7 +42,7 @@ export function Controls({
               <button
                 onClick={toggleAllSegments}
                 className={
-                  "rounded-full px-3 py-1 text-xs font-bold transition " +
+                  "rounded-full px-3 py-1 text-xs font-bold transition duration-150 hover:scale-105 active:scale-95 " +
                   (allOn
                     ? "bg-[#e0743f] text-white shadow-sm dark:bg-[#e0743f]"
                     : "border border-orange-400 text-orange-600 hover:bg-orange-50 dark:border-orange-500 dark:text-orange-300 dark:hover:bg-orange-500/10")
@@ -59,7 +59,7 @@ export function Controls({
                 key={s}
                 onClick={() => toggleSegment(s)}
                 className={
-                  "rounded-full px-3 py-1 text-xs font-semibold transition " +
+                  "rounded-full px-3 py-1 text-xs font-semibold transition duration-150 hover:scale-105 active:scale-95 " +
                   (on
                     ? "bg-[#e0743f] text-white shadow-sm dark:bg-[#e0743f]"
                     : "bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700")

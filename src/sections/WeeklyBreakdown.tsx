@@ -19,12 +19,16 @@ const TOP_N = 4; // stacked segments per week (keep it readable)
 // stack bottom -> top: navy, dark red, red-orange, coral (rank 1..4)
 const REDS = ["#1e3050", "#b1333f", "#d6473c", "#ea5c43"];
 
-// continuous week-of-year: 4 weeks per month, so Jan = 1-4, Feb = 5-8, … Jun = 21-24
-// within a month: 1-7=Wk1, 8-14=Wk2, 15-21=Wk3, 22-end=Wk4
+// calendar week-of-year matching Power BI / Excel WEEKNUM (return_type 1):
+// weeks start Sunday, week 1 is the week containing Jan 1. e.g. Jul 7 2026 -> week 28.
 const weekOf = (iso: string) => {
-  const month = parseInt(iso.slice(5, 7), 10);
-  const weekInMonth = Math.min(Math.floor((parseInt(iso.slice(8, 10), 10) - 1) / 7) + 1, 4);
-  return (month - 1) * 4 + weekInMonth;
+  const y = parseInt(iso.slice(0, 4), 10);
+  const mo = parseInt(iso.slice(5, 7), 10);
+  const da = parseInt(iso.slice(8, 10), 10);
+  const jan1 = Date.UTC(y, 0, 1);
+  const dayOfYear = Math.floor((Date.UTC(y, mo - 1, da) - jan1) / 86400000); // 0-based
+  const jan1Dow = new Date(jan1).getUTCDay(); // 0 = Sunday
+  return Math.floor((dayOfYear + jan1Dow) / 7) + 1;
 };
 
 export function WeeklyBreakdown({
@@ -162,7 +166,7 @@ export function WeeklyBreakdown({
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
-        Top {TOP_N} {dim === "promo" ? "promos" : "channels"} · stacked per week · week-of-year, 4 per month (Jan 1-4 … Jun 21-24)
+        Top {TOP_N} {dim === "promo" ? "promos" : "channels"} · stacked per week · calendar week-of-year (Power BI WEEKNUM, weeks start Sunday)
       </p>
       <div className="relative h-[340px]">
         <Bar
