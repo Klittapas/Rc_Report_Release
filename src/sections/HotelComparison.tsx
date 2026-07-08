@@ -14,7 +14,6 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 type Metric = "revenue" | "revpar" | "occ" | "rooms" | "adr";
 const METRICS: { key: Metric; label: string }[] = [
   { key: "revenue", label: "Revenue" },
-  { key: "revpar", label: "RevPAR" },
   { key: "occ", label: "Occupancy" },
   { key: "rooms", label: "Rooms Sold" },
   { key: "adr", label: "ADR" },
@@ -37,7 +36,7 @@ export function HotelComparison({
   selectedName?: string;
   onSelect: (name: string) => void;
 }) {
-  const [metric, setMetric] = useState<Metric>("revpar");
+  const [metric, setMetric] = useState<Metric>("revenue");
 
   const tick = dark ? "#94a3b8" : "#64748b";
   const label = dark ? "#e2e8f0" : "#334155";

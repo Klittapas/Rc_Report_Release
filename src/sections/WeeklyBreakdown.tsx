@@ -6,7 +6,7 @@ import {
 import type { Plugin } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { Dataset } from "../data/aggregate.ts";
-import { fmt, fmtK, PROMO_COLORS, CHANNEL_PALETTE } from "../data/format.ts";
+import { fmt, fmtK } from "../data/format.ts";
 import { Dropdown } from "../ui/Dropdown.tsx";
 import { MultiSelect } from "../ui/MultiSelect.tsx";
 
@@ -16,9 +16,21 @@ const ALL_PROMO = "All promos";
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 const H = 0, S = 1, P = 2, C = 3, D = 4, ROOMS = 5, REV = 6;
-const DEFAULT_SHOWN = 4; 
-const BAR_THICK = 40; 
-const OTHER_COLOR = "#94a3b8"; 
+const DEFAULT_SHOWN = 4;
+const BAR_THICK = 40;
+const OTHER_COLOR = "#94a3b8"; // muted slate for the combined "Other" stack (unticked items)
+// warm "orange theme" categorical palette — distinct amber/orange/terracotta/brown steps,
+// ordered so neighbours contrast in lightness. Assigned by entity index (stable, never by rank).
+const ORANGE_THEME = [
+  "#9a3412", "#fb923c", "#c2410c", "#fdba74", "#ea580c",
+  "#7c2d12", "#f59e0b", "#e0743f", "#fecba1", "#b45309",
+];
+// white text on dark fills, near-black on light fills — keeps data labels legible on any step
+const textOn = (c: string) => {
+  const m = c.replace("#", "");
+  const r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#1c1917" : "#ffffff";
+};
 
 const weekOf = (iso: string) => {
   const y = parseInt(iso.slice(0, 4), 10);
@@ -54,10 +66,10 @@ export function WeeklyBreakdown({
   const dimIdx = dim === "promo" ? P : C;
   const names = dim === "promo" ? dataset.plans : dataset.channels;
 
+  // color follows the entity (never its rank) so ticking never repaints survivors —
+  // warm orange-theme step by the item's stable index in its dimension
   const colorFor = (name: string) =>
-    dim === "promo"
-      ? PROMO_COLORS[name] ?? OTHER_COLOR
-      : CHANNEL_PALETTE[Math.max(0, dataset.channels.indexOf(name)) % CHANNEL_PALETTE.length];
+    ORANGE_THEME[Math.max(0, names.indexOf(name)) % ORANGE_THEME.length];
   
   const hotelIdx = dataset.hotels.indexOf(hotel); 
   const chanFIdx = chanF === ALL_CHAN ? -1 : dataset.channels.indexOf(chanF);
@@ -230,7 +242,7 @@ export function WeeklyBreakdown({
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
-        {isCustom ? "Your picks" : `Top ${chosen.length}`} {dim === "promo" ? "promos" : "channels"} + Other · tick any to choose · max 7 items · stacked per week · calendar week-of-year (Power BI WEEKNUM, weeks start Sunday)
+        {isCustom ? "Your picks" : `Top ${chosen.length}`} {dim === "promo" ? "promos" : "channels"} + Other · tick any to choose · stacked per week · calendar week-of-year (Power BI WEEKNUM, weeks start Sunday)
       </p>
       
       <div className="relative h-[500px]">
@@ -278,7 +290,7 @@ export function WeeklyBreakdown({
               datalabels: {
                 anchor: "center",
                 align: "center",
-                color: "#fff",
+                color: (ctx) => textOn(String((ctx.dataset as { backgroundColor?: string }).backgroundColor ?? "#000")),
                 font: { size: 9.5, weight: 700 },
                 display: (ctx) => {
                   const v = Number(ctx.dataset.data[ctx.dataIndex]) || 0;
