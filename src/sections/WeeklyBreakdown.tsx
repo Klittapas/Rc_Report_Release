@@ -82,6 +82,7 @@ export function WeeklyBreakdown({
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      if (dataset.channels[r[C]] === "UNKNOWN_REVIEW") continue; // junk codes, not a real channel
       if (promoFIdx < 0 || r[P] === promoFIdx) chSet.add(r[C]); 
       if (chanFIdx < 0 || r[C] === chanFIdx) prSet.add(r[P]);   
     }
@@ -98,6 +99,7 @@ export function WeeklyBreakdown({
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      if (dataset.channels[r[C]] === "UNKNOWN_REVIEW") continue; // junk codes, not a real channel
       if (chanFIdx >= 0 && r[C] !== chanFIdx) continue;
       if (promoFIdx >= 0 && r[P] !== promoFIdx) continue;
       total.set(r[dimIdx], (total.get(r[dimIdx]) || 0) + r[colIdx]);
@@ -135,6 +137,7 @@ export function WeeklyBreakdown({
     for (const r of dataset.rows) {
       if (!segIdx.has(r[S]) || r[D] < startIdx || r[D] > endIdx) continue;
       if (hotelIdx >= 0 && r[H] !== hotelIdx) continue;
+      if (dataset.channels[r[C]] === "UNKNOWN_REVIEW") continue; // junk codes, not a real channel
       if (chanFIdx >= 0 && r[C] !== chanFIdx) continue;
       if (promoFIdx >= 0 && r[P] !== promoFIdx) continue;
       const wk = weekOf(dataset.dates[r[D]]);

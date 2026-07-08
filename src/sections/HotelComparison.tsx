@@ -14,7 +14,6 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 type Metric = "revenue" | "revpar" | "occ" | "rooms" | "adr";
 const METRICS: { key: Metric; label: string }[] = [
   { key: "revenue", label: "Revenue" },
-  { key: "occ", label: "Occupancy" },
   { key: "rooms", label: "Rooms Sold" },
   { key: "adr", label: "ADR" },
 ];

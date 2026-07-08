@@ -4,7 +4,7 @@ import {
   LineElement, Tooltip, Legend, Filler, LineController, BarController,
 } from "chart.js";
 import type { HotelAgg } from "../data/aggregate.ts";
-import { fmt, fmtK } from "../data/format.ts";
+import { fmt } from "../data/format.ts";
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement, PointElement, LineElement,
@@ -30,7 +30,7 @@ export function DailyTrend({ hotel, dark }: { hotel: HotelAgg; dark: boolean }) 
   return (
     <div className={box}>
       <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">Daily Trend — {hotel.name}</h4>
-      <p className="mb-2.5 text-[11px] text-slate-400">Daily revenue (line) and rooms sold (bars)</p>
+      <p className="mb-2.5 text-[11px] text-slate-400">Daily ADR (line) and rooms sold (bars)</p>
       <div className="relative h-75">
         <Chart
           type="bar"
@@ -39,7 +39,7 @@ export function DailyTrend({ hotel, dark }: { hotel: HotelAgg; dark: boolean }) 
             datasets: [
               { type: "bar" as const, label: "Rooms", data: hotel.trend.map((x) => x.rooms),
                 backgroundColor: dark ? "rgba(148,163,184,0.30)" : "rgba(148,163,184,0.35)", yAxisID: "y1", borderRadius: 4 },
-              { type: "line" as const, label: "Revenue", data: hotel.trend.map((x) => x.revenue),
+              { type: "line" as const, label: "ADR", data: hotel.trend.map((x) => (x.rooms ? x.revenue / x.rooms : 0)),
                 borderColor: accent2, backgroundColor: dark ? "rgba(251,146,60,0.15)" : "rgba(234,88,12,0.10)",
                 fill: true, tension: 0.35, pointRadius: 2, yAxisID: "y", borderWidth: 2.5 },
             ],
@@ -51,14 +51,14 @@ export function DailyTrend({ hotel, dark }: { hotel: HotelAgg; dark: boolean }) 
               legend: { labels: { color: label } },
               tooltip: {
                 callbacks: {
-                  label: (c) => c.dataset.label === "Revenue"
-                    ? ` Revenue: ${fmt(Number(c.raw))}` : ` Rooms: ${Number(c.raw).toLocaleString()}`,
+                  label: (c) => c.dataset.label === "ADR"
+                    ? ` ADR: ${fmt(Math.round(Number(c.raw)))}` : ` Rooms: ${Number(c.raw).toLocaleString()}`,
                 },
               },
             },
             scales: {
               x: { ticks: { color: tick, maxRotation: 0, font: { size: 10 } }, grid: { display: false } },
-              y: { position: "left", ticks: { color: accent2, callback: (v) => fmtK(Number(v)) }, grid: { color: grid } },
+              y: { position: "left", ticks: { color: accent2, callback: (v) => fmt(Number(v)) }, grid: { color: grid } },
               y1: { position: "right", beginAtZero: true, ticks: { color: tick, callback: (v) => Number(v).toLocaleString() }, grid: { display: false } },
             },
           }}

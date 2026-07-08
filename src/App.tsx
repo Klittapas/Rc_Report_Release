@@ -8,6 +8,7 @@ import { ChannelPromoHeatmap } from "./sections/ChannelPromoHeatmap.tsx";
 import { HotelComparison } from "./sections/HotelComparison.tsx";
 import { WeeklyBreakdown } from "./sections/WeeklyBreakdown.tsx";
 import { BoardByChannel } from "./sections/BoardByChannel.tsx";
+import { NrfFlexByChannel } from "./sections/NrfFlexByChannel.tsx";
 import { HotelDetail } from "./sections/HotelDetail.tsx";
 import { Controls } from "./ui/Controls.tsx";
 import { useTheme } from "./hooks/useTheme.ts";
@@ -202,6 +203,18 @@ export function App() {
           Board mix · RO vs RB per channel
         </div>
         <BoardByChannel
+          dataset={dataset}
+          segments={activeSegments}
+          hotel={hotels[selected]?.name ?? ""}
+          startIdx={startIdx}
+          endIdx={endIdx}
+          dark={dark}
+        />
+
+        <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
+          Refund mix · NRF vs Flex per channel
+        </div>
+        <NrfFlexByChannel
           dataset={dataset}
           segments={activeSegments}
           hotel={hotels[selected]?.name ?? ""}

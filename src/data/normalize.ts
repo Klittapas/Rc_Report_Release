@@ -36,6 +36,8 @@ function promoCategory(typ: string, refund: string): string {
 const EM = "—"; // em dash = board unknown / not applicable
 // board = last char for 8-char codes: b -> RB (room+breakfast), r/o -> RO (room only)
 const BOARD: Record<string, string> = { b: "RB", r: "RO", o: "RO" };
+// refund = char[6] for 8-char codes: f -> Flex (refundable), n -> NRF (non-refundable)
+const REFUND: Record<string, string> = { f: "Flex", n: "NRF" };
 
 /** Board (RB / RO / —) for the special (non-8-char) code families, from their suffix. */
 function boardOf(c: string): string {
@@ -45,18 +47,18 @@ function boardOf(c: string): string {
   return EM;
 }
 
-/** Raw code -> [Channel, Rate Plan, Board]. */
-function decode(code: string): [string, string, string] {
+/** Raw code -> [Channel, Rate Plan, Board, Refund]. Refund (NRF/Flex/—) comes from char[6] of 8-char codes. */
+function decode(code: string): [string, string, string, string] {
   const c = code.toLowerCase();
-  if (c.startsWith("open") || ["oprb130", "rmabf", "rmonly", "opro"].includes(c)) return ["Direct", "Open", boardOf(c)];
-  if (c.startsWith("hou") || c.startsWith("hsu") || c.startsWith("house")) return ["Internal", "House Use", EM];
-  if (c.startsWith("comp")) return ["Internal", "Complimentary", boardOf(c)];
-  if (c.startsWith("corp")) return ["Corporate", "Corporate", EM];
+  if (c.startsWith("open") || ["oprb130", "rmabf", "rmonly", "opro"].includes(c)) return ["Direct", "Open", boardOf(c), EM];
+  if (c.startsWith("hou") || c.startsWith("hsu") || c.startsWith("house")) return ["Internal", "House Use", EM, EM];
+  if (c.startsWith("comp")) return ["Internal", "Complimentary", boardOf(c), EM];
+  if (c.startsWith("corp")) return ["Corporate", "Corporate", EM, EM];
   if (c.length === 8) {
     const ch = CH_MAP[c.slice(0, 3)] ?? "UNKNOWN_REVIEW";
-    return [ch, promoCategory(c.slice(3, 6), c[6]), BOARD[c[7]] ?? EM];
+    return [ch, promoCategory(c.slice(3, 6), c[6]), BOARD[c[7]] ?? EM, REFUND[c[6]] ?? EM];
   }
-  return [CH_MAP[c.slice(0, 3)] ?? "UNKNOWN_REVIEW", "Open", EM];
+  return [CH_MAP[c.slice(0, 3)] ?? "UNKNOWN_REVIEW", "Open", EM, EM];
 }
 
 function cleanCode(raw: string): string {
@@ -116,10 +118,11 @@ export function normalizeCsv(input: string | string[]): NormalizeResult {
   const channels = new Interner();
   const roomTypes = new Interner();
   const boards = new Interner();
+  const refunds = new Interner();
   const dateSet = new Set<string>();
 
-  // accumulate across ALL files by hotel|seg|plan|chan|roomType|board|dateISO (merges + dedupes overlap)
-  const acc = new Map<string, { h: number; s: number; p: number; c: number; rt: number; bd: number; d: string; rooms: number; rev: number }>();
+  // accumulate across ALL files by hotel|seg|plan|chan|roomType|board|refund|dateISO (merges + dedupes overlap)
+  const acc = new Map<string, { h: number; s: number; p: number; c: number; rt: number; bd: number; rf: number; d: string; rooms: number; rev: number }>();
   let rowsRead = 0, skippedTotals = 0;
 
   for (const text of texts) {
@@ -154,12 +157,12 @@ export function normalizeCsv(input: string | string[]): NormalizeResult {
       const iso = toISO(stay);
       if (!iso) continue;
 
-      const [channel, plan, board] = decode(cleanCode(r[iRate]));
+      const [channel, plan, board, refund] = decode(cleanCode(r[iRate]));
       const room = iRoom >= 0 ? (cleanCode(r[iRoom] ?? "").toLowerCase() || "\u2014") : "\u2014";
-      const key = `${hotel} ${segment} ${plan} ${channel} ${room} ${board} ${iso}`;
+      const key = `${hotel} ${segment} ${plan} ${channel} ${room} ${board} ${refund} ${iso}`;
       const cur = acc.get(key);
       if (cur) { cur.rooms += rooms; cur.rev += rev; }
-      else acc.set(key, { h: hotels.idx(hotel), s: segments.idx(segment), p: plans.idx(plan), c: channels.idx(channel), rt: roomTypes.idx(room), bd: boards.idx(board), d: iso, rooms, rev });
+      else acc.set(key, { h: hotels.idx(hotel), s: segments.idx(segment), p: plans.idx(plan), c: channels.idx(channel), rt: roomTypes.idx(room), bd: boards.idx(board), rf: refunds.idx(refund), d: iso, rooms, rev });
       dateSet.add(iso);
     }
   }
@@ -169,8 +172,8 @@ export function normalizeCsv(input: string | string[]): NormalizeResult {
 
   const rows: number[][] = [];
   for (const e of acc.values()) {
-    // roomTypeIdx (col 7) then boardIdx (col 8) appended last so existing column indices stay stable
-    rows.push([e.h, e.s, e.p, e.c, dateIdx.get(e.d)!, e.rooms, Math.round(e.rev), e.rt, e.bd]);
+    // roomTypeIdx (col 7), boardIdx (col 8), then refundIdx (col 9) appended last so existing column indices stay stable
+    rows.push([e.h, e.s, e.p, e.c, dateIdx.get(e.d)!, e.rooms, Math.round(e.rev), e.rt, e.bd, e.rf]);
   }
 
   const dataset: Dataset = {
@@ -181,6 +184,7 @@ export function normalizeCsv(input: string | string[]): NormalizeResult {
     channels: channels.list,
     roomTypes: roomTypes.list,
     boards: boards.list,
+    refunds: refunds.list,
     dates: sortedDates,
     rows,
   };
