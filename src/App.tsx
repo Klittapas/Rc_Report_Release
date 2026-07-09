@@ -155,6 +155,9 @@ export function App() {
             {uploadMsg && (
               <div className="max-w-xs text-right text-[11px] font-medium text-slate-500 dark:text-slate-400">{uploadMsg}</div>
             )}
+            <div className="max-w-xs text-right text-[11px] font-medium text-amber-600 dark:text-amber-400">
+              ⚠ Note: Data for the most recent date is captured only up to 06:00 (6:00 AM) that day.
+            </div>
           </div>
         </header>
 
