@@ -4,6 +4,7 @@ import type { Dataset } from "./data/aggregate.ts";
 import { normalizeCsv } from "./data/normalize.ts";
 import { PromoByHotel } from "./sections/PromoByHotel.tsx";
 import { DailyTrend } from "./sections/DailyTrend.tsx";
+import { DayTypeClusters } from "./sections/DayTypeClusters.tsx";
 import { ChannelPromoHeatmap } from "./sections/ChannelPromoHeatmap.tsx";
 import { HotelComparison } from "./sections/HotelComparison.tsx";
 import { WeeklyBreakdown } from "./sections/WeeklyBreakdown.tsx";
@@ -156,7 +157,7 @@ export function App() {
               <div className="max-w-xs text-right text-[11px] font-medium text-slate-500 dark:text-slate-400">{uploadMsg}</div>
             )}
             <div className="max-w-xs text-right text-[11px] font-medium text-amber-600 dark:text-amber-400">
-              ⚠ Note: Data for the most recent date is captured only up to 06:00 (6:00 AM) that day.
+              ⚠ Note: Data for the most recent date is captured only up to 06:00 (6:00 AM)​ & 16:00 (4:00 PM) that day.
             </div>
           </div>
         </header>
@@ -191,6 +192,18 @@ export function App() {
         </div>
 
         <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
+          Day-type clusters · unsupervised
+        </div>
+        <DayTypeClusters
+          dataset={dataset}
+          segments={activeSegments}
+          startIdx={startIdx}
+          endIdx={endIdx}
+          selectedHotel={hotels[selected]?.name ?? ""}
+          dark={dark}
+        />
+
+        <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
           Promotion source · which OTA channel drives each promo
         </div>
         <ChannelPromoHeatmap
@@ -203,7 +216,7 @@ export function App() {
         />
 
         <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
-          Board mix · RO vs RB per channel
+          Board mix · RO vs RB per week
         </div>
         <BoardByChannel
           dataset={dataset}
@@ -215,7 +228,7 @@ export function App() {
         />
 
         <div className="mb-3.5 mt-8 text-[13px] font-bold uppercase tracking-wider text-slate-400">
-          Refund mix · NRF vs Flex per channel
+          Refund mix · NRF vs Flex per week
         </div>
         <NrfFlexByChannel
           dataset={dataset}

@@ -6,7 +6,7 @@ import {
 import type { Plugin } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { Dataset } from "../data/aggregate.ts";
-import { fmt, fmtK } from "../data/format.ts";
+import { fmt, fmtK, weekOf } from "../data/format.ts";
 import { Dropdown } from "../ui/Dropdown.tsx";
 import { MultiSelect } from "../ui/MultiSelect.tsx";
 
@@ -30,16 +30,6 @@ const textOn = (c: string) => {
   const m = c.replace("#", "");
   const r = parseInt(m.slice(0, 2), 16), g = parseInt(m.slice(2, 4), 16), b = parseInt(m.slice(4, 6), 16);
   return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#1c1917" : "#ffffff";
-};
-
-const weekOf = (iso: string) => {
-  const y = parseInt(iso.slice(0, 4), 10);
-  const mo = parseInt(iso.slice(5, 7), 10);
-  const da = parseInt(iso.slice(8, 10), 10);
-  const jan1 = Date.UTC(y, 0, 1);
-  const dayOfYear = Math.floor((Date.UTC(y, mo - 1, da) - jan1) / 86400000); 
-  const jan1Dow = new Date(jan1).getUTCDay(); 
-  return Math.floor((dayOfYear + jan1Dow) / 7) + 1;
 };
 
 export function WeeklyBreakdown({

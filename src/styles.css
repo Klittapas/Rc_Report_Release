@@ -29,3 +29,64 @@ html { scroll-behavior: smooth; }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .drill-in { animation: drillIn 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* heatmap cell: hovering sinks it in like a pressed button (no border) */
+.hm-cell {
+  border-radius: 6px;
+  transition: transform 0.1s ease, filter 0.12s ease, box-shadow 0.12s ease, border-radius 0.12s ease;
+  transform-origin: center;
+}
+.hm-cell:hover {
+  transform: scale(0.9);
+  border-radius: 10px;
+  filter: brightness(0.96) saturate(1.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.22);
+  position: relative;
+  z-index: 2;
+}
+
+/* speech-bubble tooltip: white pill + downward caret, pops in above the cell */
+.hm-tip {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  background: #fff;
+  color: #1e293b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 7px 15px;
+  border-radius: 9999px;
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.12);
+  animation: tipPopUp 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.hm-tip::after { /* caret pointing down at the cell */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: #fff;
+}
+/* flipped variant when there's no room above: caret points up */
+.hm-tip--below {
+  transform: translate(-50%, 0);
+  animation-name: tipPopDown;
+}
+.hm-tip--below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: #fff;
+}
+@keyframes tipPopUp {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 5px)) scale(0.92); }
+  to   { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+}
+@keyframes tipPopDown {
+  from { opacity: 0; transform: translate(-50%, -5px) scale(0.92); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
 import type { Dataset } from "../data/aggregate.ts";
 import { fmt, fmtK } from "../data/format.ts";
 import { Dropdown } from "../ui/Dropdown.tsx";
@@ -24,6 +24,13 @@ export function ChannelPromoHeatmap({
   dark: boolean;
 }) {
   const [metric, setMetric] = useState<"revenue" | "rooms" | "adr">("revenue");
+  const [tip, setTip] = useState<{ x: number; y: number; place: "above" | "below"; text: string } | null>(null);
+  // anchor the tooltip to the hovered cell (centered, caret pointing at it), flipping below near the top edge
+  const showTip = (e: ReactMouseEvent<HTMLTableCellElement>, text: string) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const above = r.top > 78; // enough room above? else flip below
+    setTip({ x: r.left + r.width / 2, y: above ? r.top - 8 : r.bottom + 8, place: above ? "above" : "below", text });
+  };
   const [room, setRoom] = useState<string>(ALL_ROOMS);
   const [rowDim, setRowDim] = useState<"channel" | "room">("channel");
   const [colDim, setColDim] = useState<"promo" | "room">("promo");
@@ -283,7 +290,7 @@ export function ChannelPromoHeatmap({
 
       {/* keyed remount so the drill-in animation replays when either axis flips */}
       <div key={rowDim + colDim} className="drill-in overflow-x-auto">
-        <table className="w-full border-separate border-spacing-0 text-right">
+        <table className="w-full border-separate border-spacing-[2px] text-right">
           <thead>
             <tr>
               <th className={"sticky left-0 z-10 bg-white text-left dark:bg-slate-900 " + headCls}>
@@ -312,8 +319,9 @@ export function ChannelPromoHeatmap({
                   return (
                     <td
                       key={p}
-                      title={cellTip(rowLabel(c), colLabel(p), rr)}
-                      className="px-2 py-1 text-[11px] font-semibold tabular-nums"
+                      onMouseEnter={(e) => showTip(e, cellTip(rowLabel(c), colLabel(p), rr))}
+                      onMouseLeave={() => setTip(null)}
+                      className="hm-cell cursor-default px-2 py-1 text-[11px] font-semibold tabular-nums"
                       style={{ backgroundColor: bg(v), color: txt(v) }}
                     >
                       {v !== 0 ? fmtVal(v) : "·"}
@@ -352,6 +360,15 @@ export function ChannelPromoHeatmap({
           </tbody>
         </table>
       </div>
+
+      {tip && (
+        <div
+          className={"hm-tip" + (tip.place === "below" ? " hm-tip--below" : "")}
+          style={{ left: tip.x, top: tip.y }}
+        >
+          {tip.text}
+        </div>
+      )}
     </div>
   );
 }

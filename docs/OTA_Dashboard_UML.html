@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OTA Dashboard — UML Specification</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.16.0/dist/mermaid.min.js"></script>
+<style>
+  :root { --ink:#1e293b; --muted:#64748b; --line:#e2e8f0; --accent:#ea580c; --panel:#f8fafc; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
+         color:var(--ink); background:#fff; line-height:1.6; }
+  .page { max-width:1100px; margin:0 auto; padding:48px 40px; page-break-after:always; }
+  .kicker { color:var(--accent); font-weight:700; letter-spacing:.15em; font-size:12px; text-transform:uppercase; }
+  h1 { font-size:34px; font-weight:800; margin:.3em 0; letter-spacing:-.01em; }
+  h2 { font-size:22px; font-weight:800; margin:0 0 4px; }
+  .fig { color:var(--accent); font-weight:700; letter-spacing:.12em; font-size:11px; text-transform:uppercase; }
+  .lead { color:var(--muted); font-size:15px; margin:2px 0 18px; }
+  .panel { border:1px solid var(--line); border-radius:16px; background:var(--panel); padding:20px; overflow:auto; }
+  .note { border-left:3px solid var(--accent); background:#fff7ed; padding:10px 14px; border-radius:8px;
+          font-size:14px; color:#7c2d12; margin-top:16px; }
+  .note b { color:var(--accent); }
+  .cover { min-height:60vh; display:flex; flex-direction:column; justify-content:center; text-align:center; }
+  .cover .meta { color:var(--muted); font-size:14px; margin-top:10px; }
+  .cover .stack { color:var(--muted); font-family:ui-monospace,Menlo,monospace; font-size:13px; margin-top:6px; }
+  .rule { width:60px; height:3px; background:var(--accent); margin:14px auto; border-radius:2px; }
+  .mermaid { display:flex; justify-content:center; }
+  @media print { .page { padding:24px; } a { color:inherit; text-decoration:none; } }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div class="kicker">System Design · UML Specification</div>
+  <div class="rule"></div>
+  <h1>OTA Promotion Performance<br/>Analytics Dashboard</h1>
+  <p class="lead">แผนภาพออกแบบระบบทั้งหมดด้วย UML — ปรับให้ตรงกับซอร์สโค้ดปัจจุบัน<br/>
+     เว็บแอป React + TypeScript ประมวลผลไฟล์ CSV ทั้งหมดในเบราว์เซอร์ (client-side)</p>
+  <div class="meta"><b style="color:var(--accent)">ผู้จัดทำ</b> &nbsp; นาย กฤตกาส พ่องแพร &nbsp; 6614110015</div>
+  <div class="stack">React · TypeScript · Chart.js · Bun · Tailwind &nbsp;|&nbsp; 6 diagrams · ตรงกับโค้ด ณ release branch</div>
+</section>
+
+<!-- 1. USE CASE -->
+<section class="page">
+  <div class="fig">Figure 1</div>
+  <h2>Use Case Diagram</h2>
+  <p class="lead">สิ่งที่ผู้ใช้ (ทีม Revenue Management) ทำได้กับระบบ ทุก use case ทำงานฝั่งเบราว์เซอร์ ไม่มีเซิร์ฟเวอร์</p>
+  <div class="panel">
+    <svg viewBox="0 0 900 770" role="img" aria-label="Use Case Diagram" style="width:100%;height:auto;font-family:inherit">
+      <defs>
+        <marker id="uc-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 z" fill="#ea580c"/>
+        </marker>
+      </defs>
+
+      <!-- system boundary -->
+      <rect x="180" y="34" width="700" height="712" rx="14" fill="none" stroke="#cbd5e1" stroke-width="1.5"/>
+      <text x="530" y="58" text-anchor="middle" font-size="13" fill="#64748b" font-weight="600">OTA Dashboard System (client-side)</text>
+
+      <!-- actor: Revenue Manager -->
+      <g stroke="#4f46e5" stroke-width="2" fill="none" stroke-linecap="round">
+        <circle cx="80" cy="372" r="15" fill="#eef2ff"/>
+        <line x1="80" y1="387" x2="80" y2="436"/>
+        <line x1="52" y1="406" x2="108" y2="406"/>
+        <line x1="80" y1="436" x2="60" y2="470"/>
+        <line x1="80" y1="436" x2="100" y2="470"/>
+      </g>
+      <text x="80" y="492" text-anchor="middle" font-size="12" fill="#1e293b" font-weight="700">Revenue Manager</text>
+
+      <!-- association lines: actor(112,406) -> left edge of each left-column oval (247,y) -->
+      <g stroke="#94a3b8" stroke-width="1.3">
+        <line x1="112" y1="406" x2="247" y2="90"/>
+        <line x1="112" y1="406" x2="247" y2="150"/>
+        <line x1="112" y1="406" x2="247" y2="210"/>
+        <line x1="112" y1="406" x2="247" y2="270"/>
+        <line x1="112" y1="406" x2="247" y2="330"/>
+        <line x1="112" y1="406" x2="247" y2="390"/>
+        <line x1="112" y1="406" x2="247" y2="450"/>
+        <line x1="112" y1="406" x2="247" y2="510"/>
+        <line x1="112" y1="406" x2="247" y2="570"/>
+        <line x1="112" y1="406" x2="247" y2="630"/>
+        <line x1="112" y1="406" x2="247" y2="690"/>
+      </g>
+
+      <!-- «include» / «extend» relations: source right edge (443,y) -> target left edge (642,y) -->
+      <g stroke="#ea580c" stroke-width="1.5" stroke-dasharray="5 4" fill="none" marker-end="url(#uc-arrow)">
+        <!-- Upload --include--> Normalize (same row) -->
+        <line x1="443" y1="90" x2="640" y2="90"/>
+        <!-- Select Hotel --extend--> 3 targets -->
+        <line x1="443" y1="270" x2="640" y2="250"/>
+        <line x1="443" y1="270" x2="640" y2="320"/>
+        <line x1="443" y1="270" x2="640" y2="390"/>
+      </g>
+      <g font-size="10.5" fill="#c2410c" font-style="italic" text-anchor="middle">
+        <text x="542" y="83">&#171;include&#187;</text>
+        <text x="540" y="250">&#171;extend&#187;</text>
+        <text x="548" y="300">&#171;extend&#187;</text>
+        <text x="548" y="352">&#171;extend&#187;</text>
+      </g>
+
+      <!-- use cases -->
+      <g text-anchor="middle" font-size="11.5">
+        <!-- LEFT column: all actor use cases (cx=345, rx=98) -->
+        <g fill="#eef2ff" stroke="#6366f1" stroke-width="1.5">
+          <ellipse cx="345" cy="90"  rx="98" ry="23"/>
+          <ellipse cx="345" cy="150" rx="98" ry="23"/>
+          <ellipse cx="345" cy="210" rx="98" ry="23"/>
+          <ellipse cx="345" cy="270" rx="98" ry="23"/>
+          <ellipse cx="345" cy="330" rx="98" ry="23"/>
+          <ellipse cx="345" cy="390" rx="98" ry="23"/>
+          <ellipse cx="345" cy="450" rx="98" ry="23"/>
+          <ellipse cx="345" cy="510" rx="98" ry="23"/>
+          <ellipse cx="345" cy="570" rx="98" ry="23"/>
+          <ellipse cx="345" cy="630" rx="98" ry="23"/>
+          <ellipse cx="345" cy="690" rx="98" ry="23"/>
+        </g>
+        <!-- RIGHT column: include / extend targets (cx=738) -->
+        <g fill="#fff7ed" stroke="#ea580c" stroke-width="1.5">
+          <ellipse cx="738" cy="90"  rx="98" ry="23"/>
+          <ellipse cx="738" cy="250" rx="98" ry="23"/>
+          <ellipse cx="738" cy="320" rx="98" ry="23"/>
+          <ellipse cx="738" cy="390" rx="98" ry="23"/>
+        </g>
+
+        <!-- labels -->
+        <g fill="#1e293b">
+          <text x="345" y="94">Upload Ratecode CSV</text>
+          <text x="345" y="154">Filter by Market Segment</text>
+          <text x="345" y="214">Filter by Date Range</text>
+          <text x="345" y="274">Select Hotel</text>
+          <text x="345" y="326">View Channel &#215; Promo</text>
+          <text x="345" y="340" font-size="11.5">Heatmap</text>
+          <text x="345" y="394">View Board mix by Channel</text>
+          <text x="345" y="454">View NRF / Flex by Channel</text>
+          <text x="345" y="514">Compare 7 Hotels</text>
+          <text x="345" y="574">View Weekly Breakdown</text>
+          <text x="345" y="634">View Promo by Hotel</text>
+          <text x="345" y="694">Toggle Light / Dark</text>
+
+          <text x="738" y="86">Normalize + decode</text>
+          <text x="738" y="100">rate code</text>
+          <text x="738" y="254">View Hotel Detail / KPI</text>
+          <text x="738" y="324">View Daily Trend</text>
+          <text x="738" y="394">View Day-type Clusters</text>
+        </g>
+      </g>
+    </svg>
+  </div>
+  <div class="note"><b>«include»</b> = ต้อง normalize + decode ก่อนถึงจะเห็นผล &nbsp;·&nbsp;
+     <b>«extend»</b> = เลือกโรงแรมก่อน ค่อยดู detail / trend / clusters ของโรงแรมนั้น<br/>
+     <b>ปรับปรุง:</b> เพิ่ม "Board mix by Channel", "NRF/Flex by Channel", "Day-type Clusters", "Promo by Hotel" ให้ครบตาม section จริง</div>
+</section>
+
+<!-- 2. CLASS -->
+<section class="page">
+  <div class="fig">Figure 2</div>
+  <h2>Class Diagram</h2>
+  <p class="lead">โครงสร้างข้อมูล (types) + โมดูล logic โปรแกรมเป็น functional — คลาส OOP จริงมีแค่ Interner, logic ส่วนอื่นแสดงเป็น «module»</p>
+  <div class="panel">
+    <pre class="mermaid">
+%%{init:{'theme':'neutral'}}%%
+classDiagram
+  class normalize {
+    &lt;&lt;module&gt;&gt;
+    +normalizeCsv(input) NormalizeResult
+    -parseCSV(text) string[][]
+    -decode(code) [ch, plan, board, refund]
+    -promoCategory(typ, refund) string
+    -boardOf(code) string
+    -toISO(stay) string
+  }
+  class Interner {
+    +list : string[]
+    -map : Map~string, number~
+    +idx(v) number
+  }
+  class NormalizeResult {
+    +dataset : Dataset
+    +rowsRead : number
+    +rowsKept : number
+    +skippedTotals : number
+  }
+  class Dataset {
+    +generated : string
+    +hotels : string[]
+    +segments : string[]
+    +plans : string[]
+    +channels : string[]
+    +roomTypes : string[]
+    +boards : string[]
+    +refunds : string[]
+    +dates : string[]
+    +rows : number[][]
+  }
+  class aggregate {
+    &lt;&lt;module&gt;&gt;
+    +aggregate(ds, f) HotelAgg[]
+  }
+  class Filters {
+    +segments : Set~string~
+    +startIdx : number
+    +endIdx : number
+  }
+  class HotelAgg {
+    +name : string
+    +total_revenue : number
+    +total_rooms : number
+    +adr : number
+    +best_promo : string
+    +promos : Promo[]
+    +channels : Channel[]
+    +trend : TrendPt[]
+  }
+  class cluster {
+    &lt;&lt;module&gt;&gt;
+    +standardize(data) z, means, sds
+    +kmeans(z, k) ClusterResult
+  }
+  class ClusterResult {
+    +assignments : number[]
+    +centroids : number[][]
+    +inertia : number
+  }
+  normalize ..> Interner : uses
+  normalize ..> NormalizeResult : returns
+  NormalizeResult *-- Dataset
+  aggregate ..> Dataset : reads
+  aggregate ..> Filters : reads
+  aggregate ..> HotelAgg : returns
+  cluster ..> ClusterResult : returns
+    </pre>
+  </div>
+  <div class="note"><b>ปรับปรุง:</b> เพิ่มโมดูล <b>cluster</b> (k-means จัดกลุ่ม day-type) + <b>ClusterResult</b> ที่เพิ่งเพิ่มเข้าโปรเจกต์ ยังไม่มีใน UML เดิม</div>
+</section>
+
+<!-- 3. SEQUENCE -->
+<section class="page">
+  <div class="fig">Figure 3</div>
+  <h2>Sequence Diagram — Upload &amp; Render</h2>
+  <p class="lead">ลำดับเหตุการณ์ตั้งแต่ผู้ใช้เลือกไฟล์ CSV จนกราฟขึ้นจอ ไฟล์ไม่ถูกส่งออกนอกเครื่อง</p>
+  <div class="panel">
+    <pre class="mermaid">
+%%{init:{'theme':'neutral'}}%%
+sequenceDiagram
+  actor User
+  participant App as App.tsx
+  participant N as normalize.ts
+  participant A as aggregate.ts
+  participant S as sections/*
+  participant C as Chart.js
+  User->>App: เลือกไฟล์ CSV (อ่านเป็น text)
+  App->>N: normalizeCsv(texts[])
+  N->>N: parseCSV (RFC-4180)
+  N->>N: decode(rate code)
+  N->>N: intern + accumulate rows
+  N-->>App: NormalizeResult { dataset, rowsRead, rowsKept }
+  App->>A: aggregate(dataset, filters)
+  A-->>App: HotelAgg[]
+  App->>S: render sections (props = HotelAgg)
+  S->>C: draw charts
+  C-->>User: แสดงกราฟบนหน้าจอ
+    </pre>
+  </div>
+</section>
+
+<!-- 4. ACTIVITY -->
+<section class="page">
+  <div class="fig">Figure 4</div>
+  <h2>Activity Diagram — normalizeCsv()</h2>
+  <p class="lead">ตรรกะแกนของโปรเจกต์ แปลงรหัสราคาดิบ (เช่น bdcmnmnr) เป็น Channel + Promotion + Board + Refund และรวมยอด (รวมแถวยกเลิกค่าติดลบ)</p>
+  <div class="panel">
+    <pre class="mermaid">
+%%{init:{'theme':'neutral'}}%%
+flowchart TB
+  START([Start]) --> P[parseCSV แต่ละไฟล์]
+  P --> H{เจอ header row<br/>Stay/Booking Date?}
+  H -- ไม่เจอ --> ERR[throw: format ผิด]
+  H -- เจอ --> MAP[map คอลัมน์ตามชื่อ header]
+  MAP --> SEG{มีคอลัมน์<br/>Market Segment?}
+  SEG -- ไม่มี --> ERR2[throw: หา Segment ไม่เจอ]
+  SEG -- มี --> LOOP{อ่านทีละแถว}
+  LOOP -- แถว Total --> SKIP[ข้าม subtotal]
+  SKIP --> LOOP
+  LOOP -- แถวข้อมูล --> EMPTY{rooms=0 และ rev=0?}
+  EMPTY -- ใช่ --> LOOP
+  EMPTY -- ไม่ --> DEC[decode rate code<br/>Channel/Plan/Board/Refund]
+  DEC --> ISO[toISO วันที่]
+  ISO --> ACC[intern + สะสมเข้า acc<br/>บวกยอด รวมค่าติดลบ]
+  ACC --> LOOP
+  LOOP -- หมดแถว --> BUILD[สร้าง rows number matrix]
+  BUILD --> OUT([return Dataset])
+    </pre>
+  </div>
+  <div class="note"><b>หมายเหตุ:</b> ตรงกับโค้ดปัจจุบัน — Market Segment ยัง <b>บังคับ</b> (throw ถ้าไม่มี ที่ normalize.ts:144)
+     หากภายหลังทำ segment ให้ optional + เพิ่ม Stay Date ต้องแก้แผนภาพนี้</div>
+</section>
+
+<!-- 5. STATE -->
+<section class="page">
+  <div class="fig">Figure 5</div>
+  <h2>State Diagram — App Lifecycle</h2>
+  <p class="lead">สถานะของ App component ตาม state (dataset, filters, selected)</p>
+  <div class="panel">
+    <pre class="mermaid">
+%%{init:{'theme':'neutral'}}%%
+stateDiagram-v2
+  [*] --> Empty
+  Empty --> Normalizing : upload CSV
+  Normalizing --> Ready : สำเร็จ (set dataset)
+  Normalizing --> Empty : error (แสดง message)
+  Ready --> Ready : เปลี่ยน segment / date range
+  Ready --> Ready : select hotel
+  Ready --> Ready : toggle light/dark
+  Ready --> Normalizing : upload ไฟล์ใหม่
+    </pre>
+  </div>
+</section>
+
+<!-- 6. COMPONENT (fixed) -->
+<section class="page">
+  <div class="fig">Figure 6</div>
+  <h2>Component / Package Diagram</h2>
+  <p class="lead">การแบ่งโมดูลจริงในโปรเจกต์และเส้นทางการพึ่งพา (import) — <b>แก้จากเดิมที่เรนเดอร์พัง (mermaid syntax error)</b></p>
+  <div class="panel">
+    <pre class="mermaid">
+%%{init:{'theme':'neutral'}}%%
+flowchart TB
+  HTML[index.html] --> APP[App.tsx]
+  subgraph DATA["src/data — logic ล้วน"]
+    NORM[normalize.ts]
+    AGG[aggregate.ts]
+    CLU[cluster.ts]
+  end
+  subgraph SEC["src/sections — 10 มุมมอง"]
+    S1[HotelDetail]
+    S2[DailyTrend]
+    S3[DayTypeClusters]
+    S4[ChannelPromoHeatmap]
+    S5[BoardByChannel]
+    S6[NrfFlexByChannel]
+    S7[HotelComparison]
+    S8[WeeklyBreakdown]
+    S9[PromoByHotel]
+  end
+  subgraph UI["src/ui"]
+    CTL[Controls]
+  end
+  APP --> NORM
+  APP --> AGG
+  APP --> CTL
+  APP --> SEC
+  AGG --> NORM
+  S3 --> CLU
+  SEC --> AGG
+  SEC --> CJS[react-chartjs-2 / Chart.js]
+    </pre>
+  </div>
+  <div class="note"><b>แก้:</b> วาดใหม่เป็น flowchart แสดงกราฟการ import จริง — App.tsx เป็นศูนย์กลาง,
+     DayTypeClusters เป็น section เดียวที่พึ่ง cluster.ts, ทุก section วาดกราฟผ่าน Chart.js</div>
+</section>
+
+<script>
+  mermaid.initialize({ startOnLoad: false, securityLevel: 'loose', flowchart: { htmlLabels: true } });
+  window.addEventListener('load', () => { mermaid.run(); });
+</script>
+</body>
+</html>

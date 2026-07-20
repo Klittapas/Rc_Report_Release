@@ -6,7 +6,7 @@ import {
 import type { Plugin } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { Dataset } from "../data/aggregate.ts";
-import { fmt, fmtK } from "../data/format.ts";
+import { fmt, fmtK, weekOf } from "../data/format.ts";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -49,9 +49,9 @@ export function NrfFlexByChannel({
 
   const { channels, series, nrfShare, maxTotal } = useMemo(() => {
     const segIdx = new Set([...segments].map((s) => dataset.segments.indexOf(s)).filter((i) => i >= 0));
-    // channelIdx -> class label -> value
-    const byChan = new Map<number, Map<string, number>>();
-    const chanTotal = new Map<number, number>();
+    // week -> class label -> value
+    const byWeek = new Map<number, Map<string, number>>();
+    const weekTotal = new Map<number, number>();
     let nrfTotal = 0, grand = 0;
 
     for (const r of dataset.rows) {
@@ -61,30 +61,31 @@ export function NrfFlexByChannel({
       if (dataset.channels[r[C]] === "UNKNOWN_REVIEW") continue;
       const v = r[colIdx];
       const cls = refundClass(refundLabels[r[RF]] ?? "");
-      let m = byChan.get(r[C]);
-      if (!m) { m = new Map(); byChan.set(r[C], m); }
+      const wk = weekOf(dataset.dates[r[D]]);
+      let m = byWeek.get(wk);
+      if (!m) { m = new Map(); byWeek.set(wk, m); }
       m.set(cls, (m.get(cls) || 0) + v);
-      chanTotal.set(r[C], (chanTotal.get(r[C]) || 0) + v);
+      weekTotal.set(wk, (weekTotal.get(wk) || 0) + v);
       if (cls === "NRF") nrfTotal += v;
       grand += v;
     }
 
-    // channels (X) with data, biggest first
-    const chanKeys = [...chanTotal.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map((e) => e[0]);
+    // weeks (X) in chronological order
+    const weekKeys = [...byWeek.keys()].sort((a, b) => a - b);
     // only classes that actually appear, in fixed order
     const present = new Set<string>();
-    for (const m of byChan.values()) for (const k of m.keys()) present.add(k);
+    for (const m of byWeek.values()) for (const k of m.keys()) present.add(k);
     const classKeys = CLASS_ORDER.filter((c) => present.has(c));
 
     return {
-      channels: chanKeys.map((ci) => dataset.channels[ci]),
+      channels: weekKeys.map((wk) => `Week ${wk}`),
       series: classKeys.map((c) => ({
         cls: c,
-        data: chanKeys.map((ci) => byChan.get(ci)!.get(c) || 0),
+        data: weekKeys.map((wk) => byWeek.get(wk)!.get(c) || 0),
       })),
       nrfShare: grand ? Math.round((nrfTotal / grand) * 1000) / 10 : 0,
       // tallest bar total — used to hide labels on segments too short to hold text
-      maxTotal: chanKeys.length ? chanTotal.get(chanKeys[0])! : 0,
+      maxTotal: weekKeys.length ? Math.max(...weekKeys.map((wk) => weekTotal.get(wk)!)) : 0,
     };
   }, [dataset, segments, startIdx, endIdx, colIdx, hotelIdx, refundLabels]);
 
@@ -96,7 +97,7 @@ export function NrfFlexByChannel({
   if (!channels.length) {
     return (
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">NRF vs Flex by channel</h4>
+        <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">NRF vs Flex by week</h4>
         <p className="mt-2 text-[11px] text-slate-400">No data for this hotel with the current segment / date filters.</p>
       </div>
     );
@@ -106,7 +107,7 @@ export function NrfFlexByChannel({
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
         <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
-          NRF vs Flex by channel — who commits to non-refundable
+          NRF vs Flex by week — who commits to non-refundable
         </h4>
         <div className="flex gap-1">
           {(["rooms", "revenue"] as const).map((m) => (
@@ -126,7 +127,7 @@ export function NrfFlexByChannel({
         </div>
       </div>
       <p className="mb-3 text-[11px] text-slate-400">
-        Stacked per channel · <b className="text-orange-600 dark:text-orange-400">{nrfShare}% NRF</b> (non-refundable) overall · reflects segment + date filters
+        Stacked per week · <b className="text-orange-600 dark:text-orange-400">{nrfShare}% NRF</b> (non-refundable) overall · reflects segment + date filters
       </p>
       <div className="relative h-[340px]">
         <Bar

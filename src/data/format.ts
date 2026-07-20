@@ -1,5 +1,16 @@
 export const fmt = (n: number) => (n < 0 ? "-฿" : "฿") + Math.abs(n).toLocaleString("en-US");
 
+/** Calendar week-of-year (Power BI WEEKNUM, weeks start Sunday). */
+export const weekOf = (iso: string) => {
+  const y = parseInt(iso.slice(0, 4), 10);
+  const mo = parseInt(iso.slice(5, 7), 10);
+  const da = parseInt(iso.slice(8, 10), 10);
+  const jan1 = Date.UTC(y, 0, 1);
+  const dayOfYear = Math.floor((Date.UTC(y, mo - 1, da) - jan1) / 86400000);
+  const jan1Dow = new Date(jan1).getUTCDay();
+  return Math.floor((dayOfYear + jan1Dow) / 7) + 1;
+};
+
 export const fmtK = (n: number) => {
   const sign = n < 0 ? "-฿" : "฿";
   const a = Math.abs(n);
