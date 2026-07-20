@@ -117,10 +117,12 @@ export function DayTypeClusters({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        
         <h4 className="text-[13px] font-bold text-slate-700 dark:text-slate-200">
-          Day-type clusters — unsupervised (k-means) Maintain.... Not ready to use
+          Day-type clusters — unsupervised (k-means)
         </h4>
         <div className="flex items-center gap-1">
+          
           <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">clusters</span>
           {[2, 3, 4].map((kk) => (
             <button
@@ -138,10 +140,15 @@ export function DayTypeClusters({
           ))}
         </div>
       </div>
+      
       <p className="mb-3 text-[11px] text-slate-400">
         Groups {days.length} days by <b>rooms · ADR · %OTA · %NRF · %RB · weekend</b> (z-scored). Color = cluster · {selectedHotel || "—"} · reflects segment + date filters.
       </p>
+       <p className="mb-1 text-[13px] text-red-600 font-bold ">
+        Maintain.... Not ready to use.
+      </p>
 
+     
       {/* calendar strip */}
       <div className="mb-4 space-y-2">
         {[...byMonth.entries()].map(([m, ds]) => (
