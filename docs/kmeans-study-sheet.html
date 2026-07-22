@@ -1,0 +1,346 @@
+<title>K-means · ชีทเรียน (Study Sheet)</title>
+<style>
+  :root {
+    --paper: #fbfbfd;
+    --grid: #eef0f6;
+    --ink: #1c2230;
+    --ink-strong: #0d1220;
+    --muted: #676f83;
+    --line: #dcdfea;
+    --card: #ffffff;
+    --accent: #4f46e5;
+    --accent-soft: #eef0ff;
+    --code-bg: #f4f5fa;
+    --code-ink: #313a52;
+    --c1: #ea580c; --c2: #0d9488; --c3: #2563eb;
+    --warn-bg: #fff6ec; --warn-line: #e8973d;
+    --formula-bg: #f6f7fc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0b0f1a; --grid: #131a2b; --ink: #d5dced; --ink-strong: #f0f3fb;
+      --muted: #8b93a9; --line: #232c42; --card: #121a2c; --accent: #8b8bf5;
+      --accent-soft: #1a1d3a; --code-bg: #0e1424; --code-ink: #c2cadd;
+      --warn-bg: #241a0b; --warn-line: #7d5e26; --formula-bg: #0f1526;
+    }
+  }
+  :root[data-theme="light"] {
+    --paper:#fbfbfd;--grid:#eef0f6;--ink:#1c2230;--ink-strong:#0d1220;--muted:#676f83;
+    --line:#dcdfea;--card:#fff;--accent:#4f46e5;--accent-soft:#eef0ff;--code-bg:#f4f5fa;
+    --code-ink:#313a52;--warn-bg:#fff6ec;--warn-line:#e8973d;--formula-bg:#f6f7fc;
+  }
+  :root[data-theme="dark"] {
+    --paper:#0b0f1a;--grid:#131a2b;--ink:#d5dced;--ink-strong:#f0f3fb;--muted:#8b93a9;
+    --line:#232c42;--card:#121a2c;--accent:#8b8bf5;--accent-soft:#1a1d3a;--code-bg:#0e1424;
+    --code-ink:#c2cadd;--warn-bg:#241a0b;--warn-line:#7d5e26;--formula-bg:#0f1526;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 26px 26px,
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 26px 26px,
+      var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Sarabun", sans-serif;
+    line-height: 1.7; font-size: 15.5px;
+  }
+  .sheet { max-width: 860px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* masthead */
+  .mast {
+    background: var(--card); border: 1.5px solid var(--ink-strong); border-radius: 4px;
+    padding: 22px 26px; margin-bottom: 30px; position: relative;
+    box-shadow: 5px 5px 0 var(--accent-soft);
+  }
+  .mast .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 11px;
+    letter-spacing: .12em; text-transform: uppercase; color: var(--accent); font-weight: 700;
+  }
+  .mast h1 {
+    font-size: clamp(26px, 5vw, 38px); margin: 6px 0 6px; color: var(--ink-strong);
+    letter-spacing: -.02em; font-weight: 800; line-height: 1.1;
+  }
+  .mast p { margin: 0; color: var(--muted); font-size: 14.5px; }
+  .mast .row { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+
+  /* numbered blocks */
+  .block { margin-top: 34px; }
+  .block > h2 {
+    display: flex; align-items: baseline; gap: 10px; font-size: 21px; color: var(--ink-strong);
+    margin: 0 0 12px; font-weight: 800; letter-spacing: -.01em;
+    border-bottom: 2px solid var(--line); padding-bottom: 8px;
+  }
+  .block > h2 .n {
+    font-family: ui-monospace, Menlo, monospace; font-size: 14px; font-weight: 700;
+    color: #fff; background: var(--accent); border-radius: 5px; padding: 2px 9px; flex: none;
+  }
+  h3 { font-size: 15.5px; color: var(--ink-strong); margin: 20px 0 6px; font-weight: 700; }
+  p { margin: 0 0 12px; }
+  b, strong { color: var(--ink-strong); }
+
+  /* formula card */
+  .formula {
+    background: var(--formula-bg); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 6px; padding: 14px 18px; margin: 14px 0;
+    font-family: "Cambria Math", Georgia, "Times New Roman", serif;
+  }
+  .formula .eq { font-size: 19px; color: var(--ink-strong); line-height: 1.5; }
+  .formula .where { font-size: 13px; color: var(--muted); margin-top: 8px; font-family: inherit; }
+  .formula .name {
+    font-family: ui-monospace, Menlo, monospace; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--accent); font-weight: 700; margin-bottom: 7px;
+  }
+  var { font-style: italic; font-family: "Cambria Math", Georgia, serif; }
+  sub, sup { font-size: .72em; }
+
+  /* code */
+  pre {
+    background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--line);
+    border-radius: 7px; padding: 14px 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.6;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin: 12px 0;
+  }
+  code {
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .87em;
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px;
+    padding: 1px 5px; color: var(--code-ink);
+  }
+  pre code { border: 0; padding: 0; background: transparent; }
+
+  /* step list */
+  .steps { counter-reset: st; list-style: none; padding: 0; margin: 14px 0; }
+  .steps li {
+    position: relative; padding: 10px 14px 10px 46px; margin-bottom: 8px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 7px; font-size: 14.5px;
+  }
+  .steps li::before {
+    counter-increment: st; content: counter(st);
+    position: absolute; left: 12px; top: 10px; width: 24px; height: 24px;
+    background: var(--accent); color: #fff; border-radius: 6px;
+    font-family: ui-monospace, Menlo, monospace; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* callouts */
+  .warn {
+    background: var(--warn-bg); border-left: 3px solid var(--warn-line); border-radius: 6px;
+    padding: 12px 16px; margin: 14px 0; font-size: 14px;
+  }
+  .note {
+    background: var(--accent-soft); border-left: 3px solid var(--accent); border-radius: 6px;
+    padding: 12px 16px; margin: 14px 0; font-size: 14px;
+  }
+
+  /* table */
+  .tblwrap { overflow-x: auto; margin: 14px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+       font-weight: 700; padding: 8px 11px; border-bottom: 2px solid var(--line); white-space: nowrap; }
+  td { padding: 8px 11px; border-bottom: 1px solid var(--line); }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px; }
+
+  /* two-col */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 14px 0; }
+  .cols > div { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .cols h3 { margin-top: 0; }
+  @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } }
+
+  /* exercises */
+  .ex { background: var(--card); border: 1px dashed var(--accent); border-radius: 8px; padding: 14px 18px; margin: 12px 0; }
+  .ex b { color: var(--accent); }
+
+  /* glossary */
+  dl.gloss { margin: 12px 0; }
+  dl.gloss dt { font-weight: 700; color: var(--ink-strong); margin-top: 10px; font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; }
+  dl.gloss dd { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+
+  .foot { margin-top: 50px; border-top: 1.5px solid var(--line); padding-top: 16px; font-size: 12.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+
+  @media print {
+    body { background: #fff; font-size: 11pt; }
+    .sheet { max-width: 100%; padding: 0; }
+    .block { break-inside: avoid; }
+    .mast { box-shadow: none; }
+    pre, .formula, .steps li { break-inside: avoid; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header class="mast">
+    <div class="tag">Study Sheet · Unsupervised Learning</div>
+    <h1>K-means Clustering</h1>
+    <p>ชีทเรียนสรุป — หลักการ · สูตร · อัลกอริทึม · โค้ด Python · การเลือก k · แบบฝึกหัด</p>
+    <div class="row">
+      <span>คู่กับไฟล์: kmeans_from_scratch.py</span>
+      <span>ระดับ: เริ่มต้น → ใช้งานได้จริง</span>
+      <span>ต้องรู้ก่อน: เวกเตอร์, ค่าเฉลี่ย, SD</span>
+    </div>
+  </header>
+
+  <!-- 1 -->
+  <div class="block">
+    <h2><span class="n">1</span> ภาพรวม 30 วินาที</h2>
+    <p>K-means รับข้อมูล <var>n</var> จุด แล้วแบ่งเป็น <var>k</var> กลุ่ม โดยพยายามให้จุดในกลุ่มเดียวกันอยู่ใกล้กันที่สุด เป็น <b>unsupervised</b> — ไม่มีเฉลย เรียนจากความเหมือนของข้อมูลล้วนๆ</p>
+    <div class="cols">
+      <div>
+        <h3>ป้อนเข้า (Input)</h3>
+        <p style="margin:0">เมทริกซ์ <var>X</var> ขนาด <var>n</var>×<var>d</var><br>(<var>n</var> จุด, แต่ละจุด <var>d</var> feature) และจำนวนกลุ่ม <var>k</var></p>
+      </div>
+      <div>
+        <h3>ได้ออก (Output)</h3>
+        <p style="margin:0">label ให้แต่ละจุด (อยู่กลุ่มไหน) + centroid <var>k</var> จุด (ศูนย์กลางแต่ละกลุ่ม)</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 -->
+  <div class="block">
+    <h2><span class="n">2</span> สัญกรณ์ & สูตรหลัก</h2>
+
+    <div class="formula">
+      <div class="name">Objective — สิ่งที่ k-means ย่อให้เล็กสุด</div>
+      <div class="eq">J = Σ<sub>i=1</sub><sup>n</sup> ‖ <var>x</var><sub>i</sub> − <var>μ</var><sub>c(i)</sub> ‖²</div>
+      <div class="where"><var>x</var><sub>i</sub> = จุดที่ i · <var>μ</var><sub>c(i)</sub> = centroid ของกลุ่มที่จุด i สังกัด · J เรียกว่า <b>inertia</b> (ผลรวมระยะยกกำลังสองในกลุ่ม)</div>
+    </div>
+
+    <div class="formula">
+      <div class="name">ระยะทาง Euclidean (ยกกำลังสอง)</div>
+      <div class="eq">d²(<var>a</var>, <var>b</var>) = Σ<sub>j=1</sub><sup>d</sup> (<var>a</var><sub>j</sub> − <var>b</var><sub>j</sub>)²</div>
+      <div class="where">ไม่ถอดรูทเพื่อความเร็ว — การเปรียบเทียบว่าอันไหนใกล้กว่าให้ผลเท่ากัน</div>
+    </div>
+
+    <div class="formula">
+      <div class="name">Centroid update — จุดศูนย์กลางใหม่</div>
+      <div class="eq"><var>μ</var><sub>c</sub> = (1 / |C<sub>c</sub>|) · Σ<sub>i∈C<sub>c</sub></sub> <var>x</var><sub>i</sub></div>
+      <div class="where">= ค่าเฉลี่ยของสมาชิกในกลุ่ม C<sub>c</sub> (ที่มาของชื่อ "mean")</div>
+    </div>
+
+    <div class="formula">
+      <div class="name">z-score — ทำให้ทุก feature สเกลเดียวกัน (สำคัญมาก)</div>
+      <div class="eq"><var>z</var><sub>j</sub> = (<var>x</var><sub>j</sub> − <var>μ</var><sub>j</sub>) / <var>σ</var><sub>j</sub></div>
+      <div class="where"><var>μ</var><sub>j</sub>, <var>σ</var><sub>j</sub> = ค่าเฉลี่ย/SD ของ feature ที่ j · ทำก่อนเข้า k-means เสมอ</div>
+    </div>
+
+    <div class="formula">
+      <div class="name">Silhouette — วัดว่ากลุ่มชัดแค่ไหน (−1 ถึง 1)</div>
+      <div class="eq">s(i) = (b<sub>i</sub> − a<sub>i</sub>) / max(a<sub>i</sub>, b<sub>i</sub>)</div>
+      <div class="where">a<sub>i</sub> = ระยะเฉลี่ยไปเพื่อนร่วมกลุ่ม · b<sub>i</sub> = ระยะเฉลี่ยไปกลุ่มข้างบ้านที่ใกล้สุด · คะแนนรวม = เฉลี่ย s(i) ทั้งชุด</div>
+    </div>
+  </div>
+
+  <!-- 3 -->
+  <div class="block">
+    <h2><span class="n">3</span> อัลกอริทึม (Lloyd's algorithm)</h2>
+    <ol class="steps">
+      <li><b>Standardize</b> — z-score ทุกคอลัมน์ ให้ feature เสียงเท่ากัน</li>
+      <li><b>Init</b> — วาง centroid เริ่มต้น <var>k</var> จุด (ใช้ k-means++ ดีกว่าสุ่มมั่ว)</li>
+      <li><b>Assign</b> — จุดทุกจุดเข้าหา centroid ที่ใกล้ที่สุด (ใช้ d²)</li>
+      <li><b>Update</b> — เลื่อน centroid แต่ละตัวไปที่ค่าเฉลี่ยของสมาชิก</li>
+      <li><b>วนซ้ำ 3→4</b> จนไม่มีจุดไหนเปลี่ยนกลุ่ม = ลู่เข้า (converged)</li>
+      <li><b>Restart</b> ทั้งหมดหลายรอบ (เช่น 12) เก็บรอบที่ inertia ต่ำสุด</li>
+    </ol>
+    <div class="note"><b>ทำไมหยุดแน่:</b> ทุกจังหวะ assign และ update มีแต่ทำให้ J (inertia) ลดลงหรือเท่าเดิม ไม่มีทางเพิ่ม → รับประกันลู่เข้า แต่<b>ไม่รับประกันว่าดีที่สุด</b> (จึงต้อง restart)</div>
+  </div>
+
+  <!-- 4 -->
+  <div class="block">
+    <h2><span class="n">4</span> โค้ด Python — หัวใจทีละส่วน</h2>
+
+    <h3>4.1 Standardize (z-score)</h3>
+    <pre><code>def standardize(X):
+    mean = X.mean(axis=0)
+    sd = X.std(axis=0)
+    sd[sd == 0] = 1.0          # กันหารศูนย์
+    return (X - mean) / sd, mean, sd</code></pre>
+
+    <h3>4.2 k-means++ seeding</h3>
+    <pre><code>def _kpp_init(Z, k, rng):
+    centroids = [Z[rng.integers(len(Z))]]
+    for _ in range(1, k):
+        # ระยะ² ไป centroid ใกล้สุดที่มีอยู่แล้ว
+        d2 = np.min([((Z - c)**2).sum(1) for c in centroids], axis=0)
+        probs = d2 / d2.sum()             # ไกล = โอกาสถูกเลือกสูง
+        centroids.append(Z[rng.choice(len(Z), p=probs)])
+    return np.array(centroids)</code></pre>
+
+    <h3>4.3 ลูปหลัก assign / update</h3>
+    <pre><code>for _ in range(max_iter):
+    # ASSIGN: dists[i,c] = ระยะ² จุด i ถึง centroid c
+    dists = ((Z[:, None, :] - C[None, :, :])**2).sum(2)
+    new_labels = dists.argmin(1)
+    if np.array_equal(new_labels, labels):
+        break                             # ไม่มีใครย้าย = จบ
+    labels = new_labels
+    # UPDATE: centroid = ค่าเฉลี่ยสมาชิก
+    for c in range(k):
+        m = Z[labels == c]
+        if len(m): C[c] = m.mean(0)</code></pre>
+    <p style="font-size:13px;color:var(--muted)">โค้ดเต็ม (มี restart, silhouette, elbow, วาดกราฟ) อยู่ในไฟล์ <code>kmeans_from_scratch.py</code></p>
+  </div>
+
+  <!-- 5 -->
+  <div class="block">
+    <h2><span class="n">5</span> เลือก k เท่าไหร่?</h2>
+    <p>k-means บังคับแบ่ง <var>k</var> กลุ่มเสมอ ต่อให้ข้อมูลไม่มีกลุ่มจริง — ต้องมีเครื่องมือช่วยตัดสิน</p>
+    <div class="cols">
+      <div>
+        <h3>Elbow (ดู inertia)</h3>
+        <p style="margin:0;font-size:14px">เพิ่ม k → inertia ลดเสมอ หาจุดที่กราฟ "หักศอก" ลดต่อแล้วได้กำไรน้อย</p>
+      </div>
+      <div>
+        <h3>Silhouette (แนะนำ)</h3>
+        <p style="margin:0;font-size:14px">เลือก k ที่ให้ค่าสูงสุด — วัดการแยกกลุ่มโดยตรง อ่านง่ายกว่า elbow</p>
+      </div>
+    </div>
+    <div class="tblwrap"><table>
+      <tr><th class="num">silhouette</th><th>ตีความ</th></tr>
+      <tr><td class="num">&gt; 0.50</td><td>กลุ่มชัด แยกขาดจริง</td></tr>
+      <tr><td class="num">0.35 – 0.50</td><td>พอใช้ — มีโครงสร้าง ขอบเบลอ</td></tr>
+      <tr><td class="num">0.25 – 0.35</td><td>อ่อน — เริ่มคาบเกี่ยว</td></tr>
+      <tr><td class="num">&lt; 0.25</td><td>แทบไม่มีกลุ่มจริง</td></tr>
+    </table></div>
+    <div class="note"><b>ผลรันจริงจากไฟล์</b> (ซ่อน 4 ก้อน): silhouette เลือก k=4 ได้ถูก (0.747) และ inertia หักศอกที่ k=4 พอดี (273.9 → 58.4) — สองเครื่องมือเห็นตรงกัน</div>
+  </div>
+
+  <!-- 6 -->
+  <div class="block">
+    <h2><span class="n">6</span> กับดักที่พบบ่อย</h2>
+    <div class="warn"><b>ลืม z-score</b> → feature สเกลใหญ่กลบตัวอื่น กลุ่มกลายเป็น "เรียงตาม feature เดียว" โดยไม่รู้ตัว (บั๊กเงียบ ไม่มี error)</div>
+    <div class="warn"><b>สุ่ม init มั่ว</b> → ติด local minimum, centroid ซ้อนกัน แก้ด้วย k-means++ + หลาย restart</div>
+    <div class="warn"><b>เดา k</b> → k-means แบ่งให้ครบเสมอ ต้องยืนยันด้วย silhouette/elbow ไม่ใช่ความรู้สึก</div>
+    <div class="warn"><b>ข้อมูลน้อยเกิน</b> → n ต่อกลุ่มน้อย สถิติไม่นิ่ง silhouette เชื่อไม่ได้</div>
+    <div class="warn"><b>กลุ่มไม่กลม / ขนาดต่างมาก</b> → k-means ชอบกลุ่มทรงกลมขนาดใกล้กัน ถ้ารูปร่างแปลก ใช้ DBSCAN / GMM แทน</div>
+  </div>
+
+  <!-- 7 -->
+  <div class="block">
+    <h2><span class="n">7</span> แบบฝึกหัด (ทดลองในไฟล์)</h2>
+    <div class="ex"><b>ข้อ 1 · พิสูจน์ว่า z-score จำเป็น</b><br>เอา <code>standardize()</code> ออก (ใช้ X ดิบ) แล้วขยาย feature หนึ่งให้สเกลใหญ่ (×1000) → ดูว่ากลุ่มเพี้ยนเป็น "เรียงตาม feature นั้น" ยังไง</div>
+    <div class="ex"><b>ข้อ 2 · เจอ local minimum ด้วยตา</b><br>ตั้ง <code>restarts=1</code> แล้วรันซ้ำ 20 ครั้ง → จด inertia ทุกครั้ง จะเห็นบางครั้งกระโดดสูง = ติดหลุมพราง</div>
+    <div class="ex"><b>ข้อ 3 · silhouette หา k ผิดเมื่อไหร่</b><br>ลด <code>spread</code> ให้ก้อนซ้อนกัน → ดูว่า silhouette ยังเลือก k ถูกไหม ที่จุดไหนเริ่มพัง</div>
+    <div class="ex"><b>ข้อ 4 · ข้อมูลจริง</b><br>เปลี่ยน <code>make_blobs()</code> เป็น dataset จริง (Iris / Mall Customers) → เทียบ label ที่ได้กับหมวดจริง</div>
+    <div class="ex"><b>ข้อ 5 · เทียบกับ library</b><br>รัน <code>sklearn.cluster.KMeans</code> ข้อมูลเดียวกัน → เทียบ inertia กับของเรา ควรใกล้กันมาก</div>
+  </div>
+
+  <!-- 8 -->
+  <div class="block">
+    <h2><span class="n">8</span> อภิธานศัพท์</h2>
+    <dl class="gloss">
+      <dt>centroid</dt><dd>จุดศูนย์กลางของกลุ่ม = ค่าเฉลี่ยของสมาชิก</dd>
+      <dt>inertia (J)</dt><dd>ผลรวมระยะ² จากทุกจุดถึง centroid ของมัน ยิ่งต่ำยิ่งกระชับ</dd>
+      <dt>converge</dt><dd>ภาวะที่วนต่อแล้วไม่มีจุดไหนย้ายกลุ่ม = อัลกอริทึมหยุด</dd>
+      <dt>local minimum</dt><dd>คำตอบที่ "ดีในละแวก" แต่ไม่ใช่ดีที่สุดทั้งหมด เกิดจาก init ไม่ดี</dd>
+      <dt>k-means++</dt><dd>วิธี init ที่เลือก centroid เริ่มให้กระจายตัว ลดโอกาสติด local minimum</dd>
+      <dt>silhouette</dt><dd>คะแนน −1..1 บอกว่ากลุ่มแยกขาดกันดีแค่ไหน</dd>
+      <dt>elbow</dt><dd>จุดหักศอกบนกราฟ inertia-vs-k ใช้ช่วยเลือก k</dd>
+    </dl>
+  </div>
+
+  <div class="foot">
+    K-means Study Sheet · หลักการเดียวกับ production (src/data/cluster.ts) · โค้ดเต็ม: docs/kmeans_from_scratch.py<br>
+    พิมพ์เป็น PDF ได้: Cmd/Ctrl + P → Save as PDF
+  </div>
+</div>

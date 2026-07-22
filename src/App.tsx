@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { dataset as bundledDataset, aggregate } from "./data/aggregate.ts";
 import type { Dataset } from "./data/aggregate.ts";
-import { normalizeCsv } from "./data/normalize.ts";
+import { normalizeFiles } from "./data/normalizeClient.ts";
 import { PromoByHotel } from "./sections/PromoByHotel.tsx";
 import { DailyTrend } from "./sections/DailyTrend.tsx";
 import { DayTypeClusters } from "./sections/DayTypeClusters.tsx";
@@ -39,8 +39,10 @@ export function App() {
     const n = list.length;
     setUploadMsg(n > 1 ? `Normalizing ${n} files…` : "Normalizing…");
     try {
-      const texts = await Promise.all(list.map((f) => f.text()));
-      const { dataset: ds, rowsRead, rowsKept } = normalizeCsv(texts);
+      // parsed off the main thread, one file at a time (see normalizeClient.ts)
+      const { dataset: ds, rowsRead, rowsKept } = await normalizeFiles(list, ({ index, total, name }) =>
+        setUploadMsg(total > 1 ? `Normalizing ${index + 1}/${total} — ${name}…` : `Normalizing ${name}…`),
+      );
       if (!ds.rows.length) throw new Error("No usable rows found.");
       // reset filters to fit the merged data
       setDataset(ds);
@@ -145,13 +147,6 @@ export function App() {
                   }}
                 />
               </label>
-              <button
-                onClick={toggleTheme}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                title="Toggle light / dark"
-              >
-                {theme === "dark" ? " Light" : " Dark"}
-              </button>
             </div>
             {uploadMsg && (
               <div className="max-w-xs text-right text-[11px] font-medium text-slate-500 dark:text-slate-400">{uploadMsg}</div>
@@ -167,6 +162,8 @@ export function App() {
           activeSegments={activeSegments}
           toggleSegment={toggleSegment}
           toggleAllSegments={toggleAllSegments}
+          dark={dark}
+          toggleTheme={toggleTheme}
           hotels={hotels.map((h) => h.name)}
           selectedHotel={hotels[selected]?.name ?? ""}
           setSelectedHotel={(name) => setSelected(Math.max(0, hotels.findIndex((h) => h.name === name)))}

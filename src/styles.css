@@ -45,6 +45,22 @@ html { scroll-behavior: smooth; }
   z-index: 2;
 }
 
+/* day-type calendar cell: lifts slightly on hover */
+.dt-cell { transition: transform 0.1s ease, box-shadow 0.12s ease; }
+.dt-cell:hover {
+  transform: scale(1.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+  position: relative;
+  z-index: 2;
+}
+
+/* cluster profile card: gentle lift on hover */
+.dt-card { transition: transform 0.12s ease, box-shadow 0.14s ease; }
+.dt-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
 /* speech-bubble tooltip: white pill + downward caret, pops in above the cell */
 .hm-tip {
   position: fixed;
@@ -70,6 +86,13 @@ html { scroll-behavior: smooth; }
   transform: translateX(-50%);
   border: 7px solid transparent;
   border-top-color: #fff;
+}
+/* multi-line variant: rounded box instead of a pill */
+.hm-tip--multi {
+  border-radius: 12px;
+  text-align: left;
+  padding: 9px 14px;
+  line-height: 1.45;
 }
 /* flipped variant when there's no room above: caret points up */
 .hm-tip--below {

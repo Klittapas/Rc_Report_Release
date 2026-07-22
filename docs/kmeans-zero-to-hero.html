@@ -1,0 +1,512 @@
+<title>K-means Zero → Hero · บทเรียนจากโปรเจกต์ OTA Dashboard</title>
+<style>
+  :root {
+    --paper: #fdfcfb;
+    --ink: #1e293b;
+    --ink-strong: #0f172a;
+    --muted: #64748b;
+    --line: #e7e2dc;
+    --card: #ffffff;
+    --accent: #ea580c;
+    --accent-soft: #fff3ec;
+    --code-bg: #f6f2ee;
+    --code-ink: #334155;
+    --peak: #ea580c;
+    --high: #1e3050;
+    --steady: #0d9488;
+    --quiet: #64748b;
+    --warn-bg: #fff7e6;
+    --warn-line: #f5c268;
+    --good-bg: #ecfdf7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0c1220;
+      --ink: #dbe3ef;
+      --ink-strong: #f1f5fb;
+      --muted: #8fa0b8;
+      --line: #232f45;
+      --card: #131b2e;
+      --accent: #fb923c;
+      --accent-soft: #26180e;
+      --code-bg: #101828;
+      --code-ink: #c4cede;
+      --high: #7d9bd4;
+      --warn-bg: #251c08;
+      --warn-line: #8a6a1f;
+      --good-bg: #0a2019;
+    }
+  }
+  :root[data-theme="light"] {
+    --paper: #fdfcfb; --ink: #1e293b; --ink-strong: #0f172a; --muted: #64748b;
+    --line: #e7e2dc; --card: #ffffff; --accent: #ea580c; --accent-soft: #fff3ec;
+    --code-bg: #f6f2ee; --code-ink: #334155; --high: #1e3050;
+    --warn-bg: #fff7e6; --warn-line: #f5c268; --good-bg: #ecfdf7;
+  }
+  :root[data-theme="dark"] {
+    --paper: #0c1220; --ink: #dbe3ef; --ink-strong: #f1f5fb; --muted: #8fa0b8;
+    --line: #232f45; --card: #131b2e; --accent: #fb923c; --accent-soft: #26180e;
+    --code-bg: #101828; --code-ink: #c4cede; --high: #7d9bd4;
+    --warn-bg: #251c08; --warn-line: #8a6a1f; --good-bg: #0a2019;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Roboto, "Noto Sans Thai", "Sarabun", "Helvetica Neue", sans-serif;
+    line-height: 1.85; font-size: 16.5px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 56px 22px 90px; }
+
+  /* ---------- hero ---------- */
+  .eyebrow {
+    font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1 {
+    font-size: clamp(30px, 5.4vw, 44px); line-height: 1.18; font-weight: 800;
+    color: var(--ink-strong); margin: 10px 0 14px; text-wrap: balance; letter-spacing: -.015em;
+  }
+  .lede { font-size: 18px; color: var(--muted); margin: 0 0 8px; text-wrap: balance; }
+  .hero-meta {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px;
+  }
+  .chip {
+    font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); background: var(--card);
+  }
+  .chip.hot { border-color: transparent; background: var(--accent-soft); color: var(--accent); }
+
+  /* ---------- structure ---------- */
+  section { margin-top: 64px; }
+  .stepnum {
+    font-size: 12px; font-weight: 800; letter-spacing: .16em; color: var(--accent);
+    text-transform: uppercase;
+  }
+  h2 {
+    font-size: 26px; font-weight: 800; color: var(--ink-strong);
+    margin: 6px 0 16px; letter-spacing: -.01em; text-wrap: balance;
+  }
+  h3 { font-size: 18px; font-weight: 700; color: var(--ink-strong); margin: 28px 0 8px; }
+  p { margin: 0 0 16px; }
+  b, strong { color: var(--ink-strong); }
+  .divider { border: 0; border-top: 1px solid var(--line); margin: 0; }
+
+  /* ---------- cards / callouts ---------- */
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; margin: 18px 0;
+  }
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    border-radius: 10px; padding: 13px 17px; margin: 18px 0; font-size: 15px;
+  }
+  .warn {
+    border-left: 3px solid var(--warn-line); background: var(--warn-bg);
+    border-radius: 10px; padding: 13px 17px; margin: 18px 0; font-size: 15px;
+  }
+  .note b:first-child, .warn b:first-child { display: inline-block; }
+
+  /* ---------- code ---------- */
+  pre {
+    background: var(--code-bg); color: var(--code-ink);
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; overflow-x: auto; font-size: 13px; line-height: 1.65;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; margin: 16px 0;
+  }
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .88em; background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 5px; padding: 1px 6px; color: var(--code-ink);
+  }
+  pre code { border: 0; padding: 0; background: transparent; }
+  .src { font-size: 12px; color: var(--muted); margin-top: -8px; }
+
+  /* ---------- tables ---------- */
+  .tblwrap { overflow-x: auto; margin: 16px 0; }
+  table {
+    border-collapse: collapse; width: 100%; font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    text-align: left; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); font-weight: 700; padding: 8px 12px; border-bottom: 2px solid var(--line);
+    white-space: nowrap;
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  td.num, th.num { text-align: right; }
+  .hi { color: var(--accent); font-weight: 700; }
+
+  /* ---------- cluster color dots ---------- */
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: baseline; }
+
+  /* ---------- interactive demo ---------- */
+  .demo {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 20px; margin: 22px 0;
+  }
+  .demo-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .btn {
+    font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
+    border-radius: 999px; padding: 7px 16px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink);
+    transition: transform .1s ease, background .15s ease;
+  }
+  .btn:hover { background: var(--code-bg); }
+  .btn:active { transform: scale(.96); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .stat { font-size: 13px; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .stat b { color: var(--accent); }
+  canvas { width: 100%; height: auto; display: block; border-radius: 10px; }
+  .demo-cap { font-size: 12.5px; color: var(--muted); margin-top: 10px; margin-bottom: 0; }
+
+  /* ---------- toc ---------- */
+  .toc { font-size: 14.5px; }
+  .toc ol { margin: 8px 0 0; padding-left: 22px; display: grid; gap: 5px; }
+  .toc a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--line); }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ---------- footer ---------- */
+  .foot { margin-top: 70px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .btn { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- ================= HERO ================= -->
+  <header>
+    <div class="eyebrow">บทเรียนจากโปรเจกต์จริง · OTA Dashboard</div>
+    <h1>K-means Clustering<br>Zero → Hero</h1>
+    <p class="lede">ทำไม dashboard ของเราถึงจับกลุ่ม "วัน" ออกมาเป็น Peak / High / Steady ได้เอง ทั้งที่ไม่มีใครสอนมัน — ไล่ตั้งแต่ศูนย์ จนอ่านโค้ด <code>cluster.ts</code> ของเราออกทุกบรรทัด</p>
+    <div class="hero-meta">
+      <span class="chip hot">k-means++</span>
+      <span class="chip">z-score</span>
+      <span class="chip">silhouette</span>
+      <span class="chip">อิงโค้ดจริง src/data/cluster.ts</span>
+    </div>
+  </header>
+
+  <section class="card toc" aria-label="สารบัญ">
+    <b>เส้นทางบทเรียน</b>
+    <ol>
+      <li><a href="#s1">โจทย์: วันไหนเป็นวันแบบไหน</a></li>
+      <li><a href="#s2">มองแต่ละวันเป็น "จุด" — feature 6 ตัว</a></li>
+      <li><a href="#s3">ความเหมือน = ระยะทาง</a></li>
+      <li><a href="#s4">กับดักหน่วย → ทำไมต้อง z-score</a></li>
+      <li><a href="#s5">หัวใจ k-means: วนสองจังหวะ (ลองเล่นเอง)</a></li>
+      <li><a href="#s6">จุดเริ่มชี้ชะตา → k-means++ และ 12 restarts</a></li>
+      <li><a href="#s7">เลือก k ยังไง — elbow กับ silhouette</a></li>
+      <li><a href="#s8">อ่านผลจริงของเรา: ทำไมออกมาเป็นแบบนี้</a></li>
+      <li><a href="#s9">ข้อจำกัดที่ต้องรู้ ก่อนเชื่อกราฟ</a></li>
+    </ol>
+  </section>
+
+  <!-- ================= 1 ================= -->
+  <section id="s1">
+    <div class="stepnum">ตอนที่ 1</div>
+    <h2>โจทย์: วันไหนเป็นวันแบบไหน</h2>
+    <p>ทีม Revenue ดูข้อมูลรายวันของโรงแรม 7 แห่ง แล้วอยากรู้ว่า <b>"วันแบบไหนที่พฤติกรรมเหมือนกัน"</b> — วันพีคที่ห้องเต็ม ADR สูง, วันธรรมดาที่ขายเรื่อยๆ, วันเงียบที่ต้องอัดโปร ถ้าจัดกลุ่มได้ ก็ตั้งราคาเป็นชุดตามกลุ่มได้ ไม่ต้องนั่งไล่ทีละวัน</p>
+    <p>ปัญหาคือ <b>ไม่มีใครมีเฉลย</b> ว่าวันที่ 14 ก.ค. เป็น "วันพีค" หรือ "วันธรรมดา" — ไม่มีคอลัมน์ label ในไฟล์ CSV งานแบบนี้เรียกว่า</p>
+    <div class="note"><b>Unsupervised learning</b> — ให้เครื่องหากลุ่มเอง จากความเหมือนของข้อมูลล้วนๆ ไม่มีเฉลยให้เทียบ ตรงข้ามกับ supervised (เช่น ทายราคาบ้าน) ที่มีคำตอบจริงไว้สอน</p>
+    <p>k-means คืออัลกอริทึม unsupervised ที่เก่าแก่และเร็วที่สุดตัวหนึ่ง หน้าที่เดียวของมันคือ: <b>รับจุด n จุด → แบ่งเป็น k กอง โดยให้จุดในกองเดียวกันอยู่ใกล้กันที่สุด</b></p>
+  </section>
+
+  <!-- ================= 2 ================= -->
+  <section id="s2">
+    <div class="stepnum">ตอนที่ 2</div>
+    <h2>มองแต่ละวันเป็น "จุด" — feature 6 ตัว</h2>
+    <p>ก่อนจะจัดกลุ่มอะไรได้ ต้องแปลงของจริง (วัน) ให้เป็นตัวเลขก่อน ใน <code>DayTypeClusters.tsx</code> เรายุบข้อมูลทั้งวันเหลือตัวเลข 6 ตัวต่อวัน:</p>
+    <div class="tblwrap"><table>
+      <tr><th>feature</th><th>ความหมาย</th><th class="num">ตัวอย่าง (5 ก.ค.)</th></tr>
+      <tr><td><code>rooms</code></td><td>ห้องที่ขายได้ทั้งวัน</td><td class="num">989</td></tr>
+      <tr><td><code>ADR</code></td><td>ราคาเฉลี่ยต่อห้อง (rev ÷ rooms)</td><td class="num">฿1,484</td></tr>
+      <tr><td><code>%OTA</code></td><td>สัดส่วนห้องที่มาจากช่องทาง OTA</td><td class="num">0.82</td></tr>
+      <tr><td><code>%NRF</code></td><td>สัดส่วน non-refundable</td><td class="num">0.41</td></tr>
+      <tr><td><code>%RB</code></td><td>สัดส่วนห้องรวมอาหารเช้า</td><td class="num">0.07</td></tr>
+      <tr><td><code>weekend</code></td><td>เสาร์–อาทิตย์ = 1, อื่นๆ = 0</td><td class="num">1</td></tr>
+    </table></div>
+    <pre><code>// DayTypeClusters.tsx — 1 วัน = เวกเตอร์ 6 ช่อง
+const raw = days.map((d) => [d.rooms, d.adr, d.ota, d.nrf, d.rb, d.wknd]);</code></pre>
+    <p>พอทำแบบนี้ <b>แต่ละวันกลายเป็นจุด 1 จุดในอวกาศ 6 มิติ</b> วาดไม่ได้ด้วยตา แต่คณิตศาสตร์ไม่สนใจ — สูตรเดียวกับ 2 มิติทุกอย่าง แค่บวกเพิ่มอีก 4 ช่อง</p>
+    <div class="note"><b>วิธีคิดสำคัญ:</b> การเลือก feature คือการเลือกว่า "ความเหมือน" แปลว่าอะไร เราใส่ %NRF เข้าไป = เราประกาศว่าวันที่ลูกค้ากล้าจองแบบคืนเงินไม่ได้ ควรถูกจัดเป็นพวกเดียวกัน ถ้าเปลี่ยนชุด feature กลุ่มจะเปลี่ยนตาม — <b>ก่อนโทษอัลกอริทึม ให้ดู feature ก่อนเสมอ</b></p>
+  </section>
+
+  <!-- ================= 3 ================= -->
+  <section id="s3">
+    <div class="stepnum">ตอนที่ 3</div>
+    <h2>ความเหมือน = ระยะทาง</h2>
+    <p>"วันสองวันเหมือนกันแค่ไหน" ตอบด้วย <b>ระยะทางแบบยุคลิด (Euclidean)</b> — สูตรพีทาโกรัสที่ยืดไปกี่มิติก็ได้:</p>
+    <pre><code>// cluster.ts:31 — ระยะทางยกกำลังสอง (ไม่ถอดรูทเพื่อความเร็ว การเปรียบเทียบให้ผลเท่ากัน)
+const dist2 = (a, b) => {
+  let s = 0;
+  for (let j = 0; j < a.length; j++) s += (a[j] - b[j]) ** 2;
+  return s;
+};</code></pre>
+    <p>จุดที่ระยะน้อย = วันที่พฤติกรรมคล้ายกัน นี่คือนิยาม "เหมือน" ทั้งหมดที่ k-means รู้จัก มันไม่เข้าใจโรงแรม ไม่เข้าใจ ADR — เข้าใจแค่ระยะห่างระหว่างตัวเลข</p>
+  </section>
+
+  <!-- ================= 4 ================= -->
+  <section id="s4">
+    <div class="stepnum">ตอนที่ 4</div>
+    <h2>กับดักหน่วย → ทำไมต้อง z-score</h2>
+    <p>ลองวัดระยะดิบๆ ระหว่างสองวันจริงจากข้อมูลเดือนกรกฎาคมของเรา:</p>
+    <div class="tblwrap"><table>
+      <tr><th></th><th class="num">rooms</th><th class="num">ADR</th><th class="num">%OTA</th></tr>
+      <tr><td>อังคาร 7 ก.ค.</td><td class="num">1,660</td><td class="num">1,496</td><td class="num">0.85</td></tr>
+      <tr><td>อาทิตย์ 5 ก.ค.</td><td class="num">989</td><td class="num">1,484</td><td class="num">0.72</td></tr>
+      <tr><td><b>ผลต่าง²</b></td><td class="num hi">450,241</td><td class="num">144</td><td class="num">0.0169</td></tr>
+    </table></div>
+    <p>เห็นปัญหาไหม — ผลต่างของ rooms ใหญ่กว่าผลต่างของ %OTA ถึง <b>26 ล้านเท่า</b> ถ้าปล่อยแบบนี้ ระยะทางทั้งก้อนจะถูก rooms ตัวเดียวกลบหมด %OTA, %NRF, weekend จะเหมือนไม่มีตัวตน — จัดกลุ่มด้วย rooms ล้วนๆ โดยไม่รู้ตัว</p>
+    <p>ทางแก้มาตรฐานคือ <b>z-score</b>: แปลงทุก feature ให้อยู่สเกลเดียวกัน — "ห่างจากค่าเฉลี่ยกี่เท่าของส่วนเบี่ยงเบนมาตรฐาน (SD)"</p>
+    <pre><code>// cluster.ts:20 — standardize: (ค่า − mean) ÷ SD ทีละคอลัมน์
+export function standardize(data: number[][]) {
+  // ... หา means[j], sds[j] ของแต่ละคอลัมน์
+  const z = data.map((row) => row.map((v, j) => (v - means[j]) / sds[j]));
+  return { z, means, sds };
+}</code></pre>
+    <p>หลังแปลง ทุก feature พูดภาษาเดียวกัน: <code>+2.0</code> แปลว่า "สูงผิดปกติ 2 SD" ไม่ว่าจะเป็นห้องหลักพันหรือสัดส่วน 0–1 ตอนนี้ %OTA มีสิทธิ์มีเสียงเท่า rooms แล้ว</p>
+    <div class="warn"><b>ถ้าลืมขั้นนี้:</b> k-means ยังรันได้ ไม่มี error อะไรเลย — แต่กลุ่มที่ได้จะเป็นแค่ "เรียงตามจำนวนห้อง" ในคราบ clustering นี่คือบั๊กเงียบที่พบบ่อยที่สุดของ k-means</p>
+  </section>
+
+  <!-- ================= 5 ================= -->
+  <section id="s5">
+    <div class="stepnum">ตอนที่ 5</div>
+    <h2>หัวใจ k-means: วนสองจังหวะ</h2>
+    <p>อัลกอริทึมทั้งหมดคือลูปเดียว สลับสองจังหวะจนกว่าจะนิ่ง:</p>
+    <div class="card">
+      <p style="margin-bottom:8px"><b>จังหวะ 1 — Assign:</b> แต่ละจุดวิ่งเข้าหา centroid (จุดศูนย์กลางกลุ่ม) ที่ใกล้ตัวเองที่สุด</p>
+      <p style="margin-bottom:8px"><b>จังหวะ 2 — Update:</b> centroid แต่ละตัวย้ายไปอยู่ตรงค่าเฉลี่ยของสมาชิกตัวเอง</p>
+      <p style="margin-bottom:0"><b>วนซ้ำ</b> จนไม่มีจุดไหนย้ายกลุ่ม = ลู่เข้า (converged)</p>
+    </div>
+    <pre><code>// cluster.ts:64 — จังหวะ assign
+for (let i = 0; i < n; i++) {
+  let bi = 0, bd = Infinity;
+  for (let c = 0; c < kk; c++) {
+    const dd = dist2(z[i], centroids[c]);
+    if (dd < bd) { bd = dd; bi = c; }          // หา centroid ที่ใกล้สุด
+  }
+  if (assign[i] !== bi) { assign[i] = bi; moved = true; }
+}
+// cluster.ts:74 — จังหวะ update: centroid = ค่าเฉลี่ยของสมาชิก
+centroids = sums.map((s, c) => counts[c] ? s.map((v) => v / counts[c]) : centroids[c]);
+if (!moved && it > 0) break;                    // ไม่มีใครย้าย = จบ</code></pre>
+
+    <h3>ลองเล่นเอง — ดู centroid เดินทีละก้าว</h3>
+    <div class="demo">
+      <div class="demo-controls">
+        <button class="btn" id="bReset">🎲 สุ่มจุดใหม่</button>
+        <button class="btn" id="bInit">วาง centroid (สุ่ม)</button>
+        <button class="btn primary" id="bStep">▶ เดิน 1 รอบ</button>
+        <button class="btn" id="bRun">รันจนจบ</button>
+        <span class="stat" id="stat">กด "วาง centroid" เพื่อเริ่ม</span>
+      </div>
+      <canvas id="cv" width="1320" height="640" aria-label="แบบจำลอง k-means แบบโต้ตอบ"></canvas>
+      <p class="demo-cap">จุด = วัน (จำลอง 2 มิติให้เห็นด้วยตา) · ✕ = centroid · สี = กลุ่มปัจจุบัน · เส้นจาง = ระยะจากจุดถึง centroid ของมัน · inertia = ผลรวมระยะ² ยิ่งต่ำยิ่งกระชับ</p>
+    </div>
+    <p>สังเกตตอนกด "เดิน 1 รอบ" ซ้ำๆ: centroid จะขยับน้อยลงเรื่อยๆ แล้วหยุดสนิท — ทุกครั้งที่วน inertia มีแต่ลดลง (พิสูจน์ได้ทางคณิตศาสตร์) มันเลย<b>การันตีว่าหยุดแน่</b> แต่…ไม่การันตีว่าหยุดในจุดที่ดีที่สุด ซึ่งนำเราไปตอนถัดไป</p>
+  </section>
+
+  <!-- ================= 6 ================= -->
+  <section id="s6">
+    <div class="stepnum">ตอนที่ 6</div>
+    <h2>จุดเริ่มชี้ชะตา → k-means++ และ 12 restarts</h2>
+    <p>ลองกด "วาง centroid (สุ่ม)" ในเดโมข้างบนหลายๆ ครั้งแล้วรันจนจบ — บางครั้งได้กลุ่มสวย บางครั้ง centroid สองตัวไปเกิดติดกันแล้วแย่งกองเดียวกัน ส่วนอีกกองโดนควบรวม ผลสุดท้ายขึ้นกับ<b>ดวงตอนวางจุดเริ่ม</b> ปรากฏการณ์นี้เรียกว่าติด <b>local minimum</b></p>
+    <p>โค้ดเราแก้สองชั้น:</p>
+    <h3>ชั้นที่ 1 — k-means++ : สุ่มแบบมีชั้นเชิง</h3>
+    <pre><code>// cluster.ts:40 — seedPP: จุดที่ "ไกลจาก centroid ที่มีแล้ว" มีโอกาสถูกเลือกสูง
+const d2 = z.map((p) => Math.min(...centroids.map((c) => dist2(p, c))));
+let r = rand() * total;   // สุ่มถ่วงน้ำหนักด้วยระยะ² → centroid เริ่มต้นกระจายตัว</code></pre>
+    <p>แทนที่จะสุ่มมั่ว มันเลือก centroid ตัวถัดไปแบบ "ยิ่งไกลจากตัวที่มีอยู่ ยิ่งน่าเลือก" — โอกาสที่สองตัวเกิดติดกันจึงต่ำมาก</p>
+    <h3>ชั้นที่ 2 — วิ่ง 12 รอบ เก็บรอบที่ดีที่สุด</h3>
+    <pre><code>// cluster.ts:54 — restarts = 12: รันทั้งกระบวน 12 ครั้ง คนละจุดเริ่ม
+// cluster.ts:78 — เก็บครั้งที่ inertia ต่ำสุดเท่านั้น
+if (!best || inertia < best.inertia) best = { assignments, centroids, inertia };</code></pre>
+    <p>และมีรายละเอียดเล็กๆ ที่คิดมาดี: <code>seed = 42</code> ตายตัว — เลขสุ่มเลยออกลำดับเดิมทุกครั้ง ผลจัดกลุ่มจึง<b>เหมือนเดิมทุกการ re-render</b> ไม่งั้นสี cluster บน dashboard จะกระพริบสลับกลุ่มทุกครั้งที่ React วาดใหม่</p>
+  </section>
+
+  <!-- ================= 7 ================= -->
+  <section id="s7">
+    <div class="stepnum">ตอนที่ 7</div>
+    <h2>เลือก k ยังไง — elbow กับ silhouette</h2>
+    <p>k-means มีจุดอ่อนโครงสร้าง: <b>เราต้องบอกจำนวนกลุ่ม (k) ให้มันก่อน</b> และมันจะแบ่งให้ครบ k กองเสมอ ต่อให้ข้อมูลไม่มีกลุ่มจริงก็ตาม ใน dashboard เราให้ผู้ใช้กดเลือก k = 2 / 3 / 4 เอง แล้วจะรู้ได้ไงว่าอันไหน "ถูก"?</p>
+    <h3>เครื่องมือ 1 — Elbow (ดู inertia)</h3>
+    <p>เพิ่ม k ไปเรื่อยๆ inertia ลดลงเสมอ (กองเยอะขึ้น แต่ละกองย่อมกระชับขึ้น) จุดที่กราฟ "หักศอก" — ลดต่อแล้วได้กำไรน้อย — คือ k ที่เหมาะ</p>
+    <h3>เครื่องมือ 2 — Silhouette (−1 ถึง 1)</h3>
+    <p>วัดต่อจุด: <i>ฉันใกล้เพื่อนร่วมกลุ่ม (a) มากกว่าใกล้กลุ่มข้างบ้าน (b) แค่ไหน</i> = (b−a)/max(a,b) แล้วเฉลี่ยทั้งชุด</p>
+    <div class="tblwrap"><table>
+      <tr><th class="num">silhouette</th><th>อ่านว่า</th></tr>
+      <tr><td class="num">&gt; 0.50</td><td>กลุ่มชัด แยกขาดจริง</td></tr>
+      <tr><td class="num">0.35 – 0.50</td><td>พอใช้ — มีโครงสร้างแต่ขอบเบลอ</td></tr>
+      <tr><td class="num">0.25 – 0.35</td><td>อ่อน — เริ่มคาบเกี่ยว</td></tr>
+      <tr><td class="num">&lt; 0.25</td><td>แทบไม่มีกลุ่มจริง k-means แค่หั่นตามหน้าที่</td></tr>
+    </table></div>
+    <p>กราฟตัวอย่างที่เราวาดกัน (ข้อมูลจำลอง 90 วัน, k=3) ได้ silhouette <b>0.46</b> — ระดับ "พอใช้–ดี": สามวงแยกจากกันเห็นชัด แต่ในวงยังหลวม</p>
+    <div class="warn"><b>ช่องโหว่ใน dashboard ตอนนี้:</b> เราให้ผู้ใช้เลือก k เองแต่<b>ไม่โชว์ silhouette</b> — ผู้ใช้ไม่มีทางรู้เลยว่ากลุ่มที่เห็นคือโครงสร้างจริงหรือการหั่นตามคำสั่ง นี่คืออัปเกรดที่ควรทำที่สุดถ้าจะใช้งานจริง</p>
+  </section>
+
+  <!-- ================= 8 ================= -->
+  <section id="s8">
+    <div class="stepnum">ตอนที่ 8</div>
+    <h2>อ่านผลจริงของเรา: ทำไมออกมาเป็นแบบนี้</h2>
+    <p>รันบนข้อมูลของเราแล้วมักได้ 3 กลุ่มหน้าตาประมาณนี้ (เรียงตาม rooms เฉลี่ย แล้วตั้งชื่อในโค้ด):</p>
+    <div class="tblwrap"><table>
+      <tr><th>กลุ่ม</th><th class="num">rooms/วัน</th><th class="num">ADR</th><th class="num">%NRF</th><th>นิสัย</th></tr>
+      <tr><td><span class="dot" style="background:var(--peak)"></span><b>Peak demand</b></td><td class="num">สูง</td><td class="num">สูง</td><td class="num">สูง</td><td>เสาร์–อาทิตย์ / วันหยุดยาว</td></tr>
+      <tr><td><span class="dot" style="background:var(--high)"></span><b>High demand</b></td><td class="num">กลาง</td><td class="num">กลาง</td><td class="num">กลาง</td><td>วันธรรมดาช่วงคึกคัก</td></tr>
+      <tr><td><span class="dot" style="background:var(--steady)"></span><b>Steady</b></td><td class="num">ต่ำ</td><td class="num">ต่ำ</td><td class="num">ต่ำ</td><td>วันเงียบ ต้องพึ่งโปร</td></tr>
+    </table></div>
+    <p>ทำไมถึงออกทรงนี้เสมอ? ตอนเราวาด PCA (ยุบ 6 มิติเหลือ 2 เพื่อดูด้วยตา) แกนแรกกินความแปรปรวนไป <b>78%</b> — แปลว่า feature ทั้ง 6 ของเรา แทบทั้งหมดเคลื่อนไป<b>ทางเดียวกัน</b>: วันที่ห้องเยอะ → ADR ก็สูง → %NRF ก็สูง → มักเป็น weekend มิติที่ดูเหมือนมี 6 จริงๆ เหลือมิติเด่นอยู่มิติเดียว คือ <b>"ระดับดีมานด์"</b></p>
+    <div class="note"><b>บทเรียนสำคัญที่สุดของทั้งเรื่อง:</b> k-means ไม่ได้ "ค้นพบ" อะไรลึกลับ — มันสะท้อนโครงสร้างของ feature ที่เราป้อน เมื่อ feature ทุกตัวสัมพันธ์กันสูง ผลจัดกลุ่มจะเป็นการหั่นสเกลเดียว (พีค/กลาง/เงียบ) ซึ่ง…เรียงตาม rooms เฉยๆ ก็ได้ผลใกล้เคียงกัน ค่าของ k-means ที่นี่คือมันหาเส้นแบ่ง<b>เอง</b>อย่างเป็นระบบ ไม่ใช่เราขีดเส้นตามใจ</p>
+  </section>
+
+  <!-- ================= 9 ================= -->
+  <section id="s9">
+    <div class="stepnum">ตอนที่ 9</div>
+    <h2>ข้อจำกัดที่ต้องรู้ ก่อนเชื่อกราฟ</h2>
+    <div class="card">
+      <p><b>1 · weekend เป็นเลข 0/1</b> — พอ z-score แล้วตัวแปรสองขั้วนี้แรงมาก มักลากกลุ่มให้กลายเป็น "แยกเสาร์อาทิตย์ vs วันธรรมดา" กลบ signal อื่น <i>ทางแก้: ตัดออกจาก feature แล้วใช้เป็น filter แทน หรือถ่วงน้ำหนักให้เบาลง</i></p>
+      <p><b>2 · feature ซ้ำทางกัน</b> — rooms / ADR / %NRF ไปด้วยกันหมด (ตอนที่ 8) กลุ่มเลยได้แค่แกนดีมานด์ <i>ทางแก้: เพิ่ม feature ที่ตั้งฉากกัน เช่น lead time เฉลี่ย, สัดส่วน cancel</i></p>
+      <p><b>3 · วันน้อยเกิน = ผลมั่ว</b> — ช่วงกรอง 16 วัน หาร k=4 เหลือกลุ่มละ ~4 วัน สถิติอะไรก็ไม่นิ่ง <i>ทางแก้: บังคับขั้นต่ำ ~60 วันก่อนยอมรัน (ตอนนี้โค้ดเช็คแค่ days ≥ k)</i></p>
+      <p style="margin-bottom:0"><b>4 · ไม่มีตัวเลขความเชื่อมั่นบนจอ</b> — ควรคำนวณ silhouette แล้วโชว์คู่ผลเสมอ ให้ผู้ใช้แยก "กลุ่มจริง" ออกจาก "หั่นตามคำสั่ง" ได้</p>
+    </div>
+    <p>ทั้งหมดนี้คือเหตุผลที่ในโค้ดยังแปะป้าย <code>Maintain… Not ready to use</code> ไว้ — อัลกอริทึมถูกต้อง แต่การนำเสนอผลยังไม่ครบเครื่องพอให้คนอ่านตัดสินใจ</p>
+  </section>
+
+  <!-- ================= wrap-up ================= -->
+  <section>
+    <div class="stepnum">สรุป</div>
+    <h2>Zero → Hero ในหนึ่งย่อหน้า</h2>
+    <p>แปลงวันเป็นเวกเตอร์ 6 ช่อง → z-score ให้ทุก feature เสียงเท่ากัน → k-means วนสองจังหวะ (assign/update) จน inertia นิ่ง → กันดวงซวยด้วย k-means++ บวก 12 restarts และ seed ตายตัว → เลือก k ด้วย elbow/silhouette ไม่ใช่ความรู้สึก → แล้ว<b>อ่านผลอย่างมีวิจารณญาณ</b>: ถ้า feature สัมพันธ์กันหมด กลุ่มที่ได้ก็คือสเกลเดียวถูกหั่นเป็นท่อน ไม่ใช่การค้นพบมหัศจรรย์ — เข้าใจครบเท่านี้ ก็อ่าน <code>cluster.ts</code> ทั้งไฟล์ออก และรู้ว่าจะพัฒนามันต่อตรงไหน</p>
+  </section>
+
+  <footer class="foot">
+    อ้างอิงโค้ดจริง: <code>src/data/cluster.ts</code> (standardize บรรทัด 20 · seedPP บรรทัด 40 · kmeans บรรทัด 54) และ <code>src/sections/DayTypeClusters.tsx</code> (features บรรทัด 72) · ตัวเลขประกอบจากไฟล์ bookstay ก.ค. 2026 ของโปรเจกต์
+  </footer>
+</div>
+
+<script>
+(function () {
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const stat = document.getElementById('stat');
+  const W = cv.width, H = cv.height;
+  const K = 3;
+  const COLORS = ['#ea580c', '#2d6cdf', '#0d9488'];
+  let pts = [], cents = [], assign = [], iter = 0, hasCent = false, timer = null;
+
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function gauss(r) { let s = 0; for (let i = 0; i < 6; i++) s += Math.random(); return (s / 6 - .5) * 2 * r; }
+
+  function makePoints() {
+    pts = [];
+    const blobs = [
+      [W * .22, H * .32, 95], [W * .62, H * .68, 110], [W * .80, H * .25, 80],
+    ];
+    for (const [bx, by, r] of blobs) {
+      for (let i = 0; i < 26; i++) pts.push([bx + gauss(r * 2.2), by + gauss(r * 1.7)]);
+    }
+    hasCent = false; cents = []; assign = new Array(pts.length).fill(-1); iter = 0;
+    stat.textContent = 'สุ่มจุดใหม่แล้ว — กด "วาง centroid"';
+    draw();
+  }
+
+  function initCents() {
+    cents = [];
+    for (let c = 0; c < K; c++) {
+      const p = pts[Math.floor(Math.random() * pts.length)];
+      cents.push([p[0] + gauss(30), p[1] + gauss(30)]);
+    }
+    assign = new Array(pts.length).fill(-1); iter = 0; hasCent = true;
+    doAssign();
+    stat.innerHTML = 'รอบ <b>0</b> · inertia <b>' + fmtInertia() + '</b>';
+    draw();
+  }
+
+  function d2(a, b) { return (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2; }
+
+  function doAssign() {
+    let moved = false;
+    for (let i = 0; i < pts.length; i++) {
+      let bi = 0, bd = Infinity;
+      for (let c = 0; c < K; c++) { const dd = d2(pts[i], cents[c]); if (dd < bd) { bd = dd; bi = c; } }
+      if (assign[i] !== bi) { assign[i] = bi; moved = true; }
+    }
+    return moved;
+  }
+  function doUpdate() {
+    for (let c = 0; c < K; c++) {
+      const m = pts.filter((_, i) => assign[i] === c);
+      if (m.length) cents[c] = [m.reduce((s, p) => s + p[0], 0) / m.length, m.reduce((s, p) => s + p[1], 0) / m.length];
+    }
+  }
+  function inertia() { let s = 0; for (let i = 0; i < pts.length; i++) s += d2(pts[i], cents[assign[i]]); return s; }
+  function fmtInertia() { return Math.round(inertia() / 1000).toLocaleString() + 'k'; }
+
+  function step() {
+    if (!hasCent) { initCents(); return true; }
+    doUpdate();
+    const moved = doAssign();
+    iter++;
+    stat.innerHTML = 'รอบ <b>' + iter + '</b> · inertia <b>' + fmtInertia() + '</b>' + (moved ? '' : ' · ✅ ลู่เข้าแล้ว (converged)');
+    draw();
+    return moved;
+  }
+
+  function run() {
+    if (timer) { clearInterval(timer); timer = null; return; }
+    if (!hasCent) initCents();
+    timer = setInterval(() => { if (!step()) { clearInterval(timer); timer = null; } }, 420);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const lineC = css('--line') || '#e2e8f0';
+    // lines point -> its centroid
+    if (hasCent) {
+      ctx.lineWidth = 1; ctx.globalAlpha = .25;
+      for (let i = 0; i < pts.length; i++) {
+        if (assign[i] < 0) continue;
+        ctx.strokeStyle = COLORS[assign[i]];
+        ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(cents[assign[i]][0], cents[assign[i]][1]); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // points
+    for (let i = 0; i < pts.length; i++) {
+      ctx.fillStyle = hasCent && assign[i] >= 0 ? COLORS[assign[i]] : (css('--muted') || '#94a3b8');
+      ctx.beginPath(); ctx.arc(pts[i][0], pts[i][1], 7, 0, 7); ctx.fill();
+      ctx.strokeStyle = css('--card') || '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    }
+    // centroids
+    if (hasCent) for (let c = 0; c < K; c++) {
+      const [x, y] = cents[c];
+      ctx.strokeStyle = COLORS[c]; ctx.lineWidth = 6; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x - 13, y - 13); ctx.lineTo(x + 13, y + 13);
+      ctx.moveTo(x + 13, y - 13); ctx.lineTo(x - 13, y + 13);
+      ctx.stroke();
+      ctx.strokeStyle = css('--paper') || '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - 13, y - 13); ctx.lineTo(x + 13, y + 13);
+      ctx.moveTo(x + 13, y - 13); ctx.lineTo(x - 13, y + 13);
+      ctx.stroke();
+    }
+  }
+
+  document.getElementById('bReset').addEventListener('click', () => { if (timer) { clearInterval(timer); timer = null; } makePoints(); });
+  document.getElementById('bInit').addEventListener('click', () => { if (timer) { clearInterval(timer); timer = null; } initCents(); });
+  document.getElementById('bStep').addEventListener('click', () => step());
+  document.getElementById('bRun').addEventListener('click', run);
+
+  // redraw on theme change so canvas colors follow tokens
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+
+  makePoints();
+})();
+</script>
